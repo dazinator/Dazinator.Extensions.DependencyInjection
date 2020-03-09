@@ -39,14 +39,13 @@ For example:
 ```csharp
     services.AddNamed<AnimalService>(names =>
     {
-        names.AddSingleton("A"); 
+        names.AddSingleton<BearService>("A"); 
         names.AddSingleton<BearService>("B");
     }
 ```
 
-In this case, `namedServices("A")` and `namedServices("B"); will return two different instances.
-However multiple calls to `namedServices("A")` will yeild the same singleton instance.
-
+In this case, "A"` and "B" will resolve to two *different instances*.
+However resolutions of "A" will yeild the same singleton instance, and the same for "B".
 
 ### Disposal
 
