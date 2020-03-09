@@ -1,14 +1,15 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System;
-
 namespace Dazinator.Extensions.DependencyInjection.Tests
 {
+    using Microsoft.Extensions.DependencyInjection;
+    using System;
+
     public static class ServiceCollectionExtensions
     {
         public static IServiceCollection AddNamed<TService>(this IServiceCollection services, Action<NamedServiceRegistry<TService>> configure)
         {
 
-            services.AddSingleton<NamedServiceRegistry<TService>>(sp => {
+            services.AddSingleton<NamedServiceRegistry<TService>>(sp =>
+            {
                 var registry = new NamedServiceRegistry<TService>(sp);
                 configure(registry);
                 return registry;

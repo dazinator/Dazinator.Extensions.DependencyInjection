@@ -1,9 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using Xunit;
-
 namespace Dazinator.Extensions.DependencyInjection.Tests
 {
+    using Microsoft.Extensions.DependencyInjection;
+    using Xunit;
+
     public class NamedServiceResolverTests
     {
         [Fact]

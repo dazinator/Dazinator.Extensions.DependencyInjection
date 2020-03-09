@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-
 namespace Dazinator.Extensions.DependencyInjection.Tests
 {
+    using System;
+    using System.Collections.Generic;
+
     public class NamedServiceResolver<TService>
     {
         private readonly IServiceProvider _serviceProvider;
@@ -15,13 +15,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
 
         public NamedServiceRegistry<TService> Registry { get; }
 
-        public TService this[string name]
-        {
-            get
-            {
-                return Get(name);
-            }
-        }
+        public TService this[string name] => Get(name);
 
         public TService Get(string name)
         {

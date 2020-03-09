@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-
 namespace Dazinator.Extensions.DependencyInjection
 {
+    using System;
+    using System.Collections.Generic;
+
     /// <summary>
     /// Register different 
     /// </summary>
@@ -67,7 +67,7 @@ namespace Dazinator.Extensions.DependencyInjection
             _namedRegistrations.Add(name, registration);
         }
         #endregion
-     
+
         public NamedServiceRegistration<TService> GetRegistration(string name)
         {
             return _namedRegistrations[name];

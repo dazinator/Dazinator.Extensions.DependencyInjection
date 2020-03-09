@@ -73,10 +73,12 @@ indent_style = tab
 [*.{cs,csx,cake,vb,vbx}]
 # "this." and "Me." qualifiers
 # https://docs.microsoft.com/visualstudio/ide/editorconfig-language-conventions#this-and-me
-dotnet_style_qualification_for_field = true:warning
-dotnet_style_qualification_for_property = true:warning
-dotnet_style_qualification_for_method = true:warning
-dotnet_style_qualification_for_event = true:warning
+#DT: I have disabled these because I prefer _ for accessing prviate fields as commented elsewhere in this doc.
+dotnet_style_qualification_for_event = false:silent
+dotnet_style_qualification_for_field = false:silent
+dotnet_style_qualification_for_method = false:silent
+dotnet_style_qualification_for_property = false:silent
+
 # Language keywords instead of framework type names for type references
 # https://docs.microsoft.com/visualstudio/ide/editorconfig-language-conventions#language-keywords
 dotnet_style_predefined_type_for_locals_parameters_members = true:warning
@@ -327,6 +329,24 @@ dotnet_naming_symbols.stylecop_private_fields_group.applicable_kinds           =
 dotnet_naming_rule.stylecop_private_fields_must_be_camel_case_rule.symbols     = stylecop_private_fields_group
 dotnet_naming_rule.stylecop_private_fields_must_be_camel_case_rule.style       = camel_case_style
 dotnet_naming_rule.stylecop_private_fields_must_be_camel_case_rule.severity    = warning
+
+# Private and internal fields start with _
+# DT: Why? I know this against the official guidelines, but this lets you easily see if a variable is a parameter of the method or a member of the class.
+# which negates the need to use "this.". The official guidelines are to use "this." wheever you need to access a private variable but as this is not enforced this can lead to bugs where
+# a developer thinks they are accessing a variable passed in to a method: e.g "username" but are instead accessing the private field "username". Using the policy of
+# _username eliminates this kind of mistake.
+dotnet_naming_rule.private_or_internal_field_should_be_private_begins_with__.severity = suggestion
+dotnet_naming_rule.private_or_internal_field_should_be_private_begins_with__.symbols = private_or_internal_field
+dotnet_naming_rule.private_or_internal_field_should_be_private_begins_with__.style = private_begins_with__
+
+dotnet_naming_symbols.private_or_internal_field.applicable_kinds = field
+dotnet_naming_symbols.private_or_internal_field.applicable_accessibilities = internal, private, private_protected
+dotnet_naming_symbols.private_or_internal_field.required_modifiers = 
+
+dotnet_naming_style.private_begins_with__.required_prefix = _
+dotnet_naming_style.private_begins_with__.required_suffix = 
+dotnet_naming_style.private_begins_with__.word_separator = 
+dotnet_naming_style.private_begins_with__.capitalization = camel_case
 
 # Local variables must be camelCase
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1312.md

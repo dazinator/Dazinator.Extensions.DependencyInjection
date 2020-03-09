@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Reflection;
-
 namespace Dazinator.Extensions.DependencyInjection
 {
+    using Microsoft.Extensions.DependencyInjection;
+    using System;
+    using System.Reflection;
+
     public static class ObjectFactoryTypeExtensions
     {
         private struct ConstructorMatcher

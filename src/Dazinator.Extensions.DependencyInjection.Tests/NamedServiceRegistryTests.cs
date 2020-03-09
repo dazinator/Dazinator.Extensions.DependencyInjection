@@ -1,11 +1,9 @@
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.ComponentModel.Design;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Xunit;
-
 namespace Dazinator.Extensions.DependencyInjection.Tests
 {
+    using Microsoft.Extensions.DependencyInjection;
+    using System;
+    using Xunit;
+
     public class NamedServiceRegistryTests
     {
 

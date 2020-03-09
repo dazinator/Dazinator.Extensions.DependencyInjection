@@ -1,10 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Win32.SafeHandles;
-using System;
-using System.Reflection;
-
 namespace Dazinator.Extensions.DependencyInjection
 {
+    using System;
+
     public class NamedServiceRegistration<TService> : IDisposable
     {
         // private readonly IServiceProvider _serviceProvider;
@@ -64,7 +61,7 @@ namespace Dazinator.Extensions.DependencyInjection
 
         public Type ImplementationType { get; }
 
-        protected Func<IServiceProvider, TService> InstanceFactory;
+        protected Func<IServiceProvider, TService> InstanceFactory { get; }
 
         ///// <summary>
         ///// If it's an instance, it's assumed to be a singleton as support for transients doesn't yet exist. The lifetime
@@ -118,18 +115,5 @@ namespace Dazinator.Extensions.DependencyInjection
         }
         #endregion
 
-
     }
-
-
-    public enum Lifetime
-    {
-        Singleton = 0,
-        Scoped = 1,
-        Transient = 2
-    }
-
-
-
-
 }
