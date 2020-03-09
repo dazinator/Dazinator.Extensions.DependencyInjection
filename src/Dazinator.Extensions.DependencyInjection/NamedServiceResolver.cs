@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Dazinator.Extensions.DependencyInjection.Tests
 {
@@ -14,12 +15,20 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
 
         public NamedServiceRegistry<TService> Registry { get; }
 
+        public TService this[string name]
+        {
+            get
+            {
+                return Get(name);
+            }
+        }
+
         public TService Get(string name)
         {
             var item = Registry.GetRegistration(name);
             if (item == null)
             {
-                return default(TService);
+                throw new KeyNotFoundException(name);
             }
             var result = item.GetOrCreateInstance(_serviceProvider);
             return result;

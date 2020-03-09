@@ -7,15 +7,21 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
     {
         public static IServiceCollection AddNamed<TService>(this IServiceCollection services, Action<NamedServiceRegistry<TService>> configure)
         {
-            var registry = new NamedServiceRegistry<TService>();
-            configure(registry);
-            registry.PopulateServiceCollection(services);
 
             services.AddSingleton<NamedServiceRegistry<TService>>(sp => {
-                // trick the di container to think it created this singleton so that it takes
-                // responsibility for disposing it if the container is disposed.
+                var registry = new NamedServiceRegistry<TService>(sp);
+                configure(registry);
                 return registry;
             });
+
+            services.AddScoped<NamedServiceResolver<TService>>();
+
+            var serviceType = typeof(TService);
+            services.AddScoped<Func<string, TService>>(sp => new Func<string, TService>(name =>
+            {
+                var resolver = sp.GetRequiredService<NamedServiceResolver<TService>>();
+                return resolver.Get(name);
+            }));
 
             // Note: for the trick to work, 
             // NamedServiceRegistry<TService> must be resolved through the container atleast once,

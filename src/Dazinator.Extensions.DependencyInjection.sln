@@ -5,12 +5,15 @@ VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dazinator.Extensions.DependencyInjection", "Dazinator.Extensions.DependencyInjection\Dazinator.Extensions.DependencyInjection.csproj", "{E63A2735-67E5-470E-AEC5-49DE18411ABB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dazinator.Extensions.DependencyInjection.Tests", "Dazinator.Extensions.DependencyInjection.Tests\Dazinator.Extensions.DependencyInjection.Tests.csproj", "{EB700C30-A2D5-492C-BFC0-271A6C2F0681}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dazinator.Extensions.DependencyInjection.Tests", "Dazinator.Extensions.DependencyInjection.Tests\Dazinator.Extensions.DependencyInjection.Tests.csproj", "{EB700C30-A2D5-492C-BFC0-271A6C2F0681}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{12078179-A569-4A33-A6D6-9AB7E09EE8EA}"
 	ProjectSection(SolutionItems) = preProject
+		..\appveyor.yml = ..\appveyor.yml
+		..\azure-pipelines.yml = ..\azure-pipelines.yml
 		Directory.Build.props = Directory.Build.props
 		global.json = global.json
+		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
 Global

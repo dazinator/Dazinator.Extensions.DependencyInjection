@@ -1,14 +1,64 @@
-## Features
-- Versioning done with GitVersion.
-- Can build via AppVeyor and Azure Devops Pipelines.
-- All projects will be SourceLinked to github thanks to `directory.props` file.
+## Register Named Services with Microsoft Dependency Injection
 
-# [Getting Started]
-- Clone this repo, then push to your own origin.
-- Create your solution (.sln) and projects in the `/src` directory.
-- Make sure global.json has the right version of the .net sdk that you require.
-- For AppVeyor builds, update AppVeyor.yml:
-    - dotnet sdk version (currently set to install latest pre-release).
-    - Now you can add to AppVeyor.
-- For Azure Devops builds:
-    - Import pipelines yaml file into Azure Devops pipeline.  
+Allows you to register services that can be resolved by name.
+
+```csharp
+    var services = new ServiceCollection();
+    services.AddNamed<AnimalService>(names =>
+    {
+        names.AddSingleton("A"); 
+        names.AddSingleton<BearService>("B");
+        names.AddSingleton("C", new BearService());
+        names.AddSingleton("D", new BearService() { SomeProperty = true });
+        
+        names.AddTransient("F");
+        names.AddTransient<LionService>("E");
+    });
+
+```
+
+You can now inject  `Func<string, AnimalService>` or `NamedServiceResolve` (depends if you don't mind your services having a dependency on this library or not).
+
+Get services by name like this:
+
+```csharp
+
+public MyController(Func<string, AnimalService> namedServices)
+{
+   AnimalService serviceA = namedServices("A");
+   AnimalService serviceB = namedServices("B"); // BearService derives from AnimalService
+}
+
+```
+
+## Singletons
+
+When you register singletons, they Singleton PER NAME.
+For example:
+
+```csharp
+    services.AddNamed<AnimalService>(names =>
+    {
+        names.AddSingleton("A"); 
+        names.AddSingleton<BearService>("B");
+    }
+```
+
+In this case, `namedServices("A")` and `namedServices("B"); will return two different instances.
+However multiple calls to `namedServices("A")` will yeild the same singleton instance.
+
+
+### Disposal
+
+By default singletons that implement IDisposable, and are registered by type, will be disposed automatically when the applicatons `IServiceProvider` is disposed.
+However if you register an instance, you must specify if you want the instance to be disposed for you, otherwise it is assumed you will manage disposal yourself.
+
+```csharp
+    services.AddNamed<AnimalService>(names =>
+    {
+        names.AddSingleton("A"); // AnimalService will be disposed for you if it implements IDisposable
+        names.AddSingleton<BearService>("B"); // same as above
+        names.AddSingleton("D", new BearService(), registrationOwnsInstance: true); // you provided an instance, you must specify - default is false.
+    }
+
+```
