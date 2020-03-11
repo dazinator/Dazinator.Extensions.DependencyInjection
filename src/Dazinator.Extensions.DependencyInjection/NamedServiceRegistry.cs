@@ -10,7 +10,7 @@ namespace Dazinator.Extensions.DependencyInjection
     public class NamedServiceRegistry<TService> : IDisposable
     {
         private readonly IServiceProvider _serviceProvider;
-        private IDictionary<string, NamedServiceRegistration<TService>> _namedRegistrations;
+        private readonly IDictionary<string, NamedServiceRegistration<TService>> _namedRegistrations;
 
         public NamedServiceRegistry(IServiceProvider serviceProvider)
         {
@@ -18,13 +18,7 @@ namespace Dazinator.Extensions.DependencyInjection
             _namedRegistrations = new Dictionary<string, NamedServiceRegistration<TService>>();
         }
 
-        public NamedServiceRegistration<TService> this[string name]
-        {
-            get
-            {
-                return GetRegistration(name);
-            }
-        }
+        public NamedServiceRegistration<TService> this[string name] => GetRegistration(name);
 
         #region Singleton
         public void AddSingleton(string name)
@@ -68,10 +62,23 @@ namespace Dazinator.Extensions.DependencyInjection
         }
         #endregion
 
-        public NamedServiceRegistration<TService> GetRegistration(string name)
+        #region Scoped
+
+        public void AddScoped(string name)
         {
-            return _namedRegistrations[name];
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TService), Lifetime.Scoped);
+            _namedRegistrations.Add(name, registration);
         }
+
+        public void AddScoped<TConcreteType>(string name)
+         where TConcreteType : TService
+        {
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TConcreteType), Lifetime.Scoped);
+            _namedRegistrations.Add(name, registration);
+        }
+
+        #endregion
+        public NamedServiceRegistration<TService> GetRegistration(string name) => _namedRegistrations[name];
 
         public IEnumerable<NamedServiceRegistration<TService>> GetRegistrations()
         {
@@ -103,21 +110,10 @@ namespace Dazinator.Extensions.DependencyInjection
             }
         }
 
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        // ~NamedServiceRegistry()
-        // {
-        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //   Dispose(false);
-        // }
-
         // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
-            // GC.SuppressFinalize(this);
-        }
+#pragma warning disable CA1063 // Implement IDisposable Correctly
+        public void Dispose() => Dispose(true);
+#pragma warning restore CA1063 // Implement IDisposable Correctly
         #endregion
 
 

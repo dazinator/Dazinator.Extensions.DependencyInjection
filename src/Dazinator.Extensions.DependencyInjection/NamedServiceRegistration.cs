@@ -39,14 +39,14 @@ namespace Dazinator.Extensions.DependencyInjection
 
                 InstanceFactory = (sp) => lazySingleton.Value; // we don't use current scope sp to resolve singletons, we use root sp, as we don't want singletons to capture scoped references (scoped references can be disposed).
             }
-            else if (lifetime == Lifetime.Transient)
+            else if (lifetime == Lifetime.Transient || lifetime == Lifetime.Scoped)
             {
                 RegistrationOwnsInstance = false;
 
-                // Perf: we do care about speed of creating transient instances as it could happen a lot.
-                // So we use ObjectFactory here.
+                // Perf: we do care about speed of creating transient or scoped instances as it could
+                // happen many times during the lifetime of the application. So we use ObjectFactory here.
                 var factory = ImplementationType.CreateObjectFactory();
-                InstanceFactory = (sp) => (TService)factory(serviceProvider, null); // we don't use current scope sp to resolve singletons, we use root sp, as we don't want singletons to capture scoped references (scoped references can be disposed).
+                InstanceFactory = (sp) => (TService)factory(sp, null);
             }
 
         }
@@ -61,22 +61,15 @@ namespace Dazinator.Extensions.DependencyInjection
 
         public Type ImplementationType { get; }
 
-        protected Func<IServiceProvider, TService> InstanceFactory { get; }
-
-        ///// <summary>
-        ///// If it's an instance, it's assumed to be a singleton as support for transients doesn't yet exist. The lifetime
-        ///// of this singleton instance is tied to the lifetime of this registration, which means you shouldn't register this with your container,
-        ///// but this registration will be registered, and disposed when this registration is disposed.
-        ///// </summary>
-        //public TService Instance { get; set; }
+        public Func<IServiceProvider, TService> InstanceFactory { get; }
 
         public Lifetime Lifetime { get; }
         public bool RegistrationOwnsInstance { get; }
-        public TService GetOrCreateInstance(IServiceProvider serviceProvider = null)
-        {
-            var instance = InstanceFactory(serviceProvider); // when resolving singletones, we disregard current scope (serviceProvider) and resolve from root scope.
-            return instance;
-        }
+        //public TService GetOrCreateInstance(IServiceProvider serviceProvider = null)
+        //{
+        //    var instance = InstanceFactory(serviceProvider); // when resolving singletones, we disregard current scope (serviceProvider) and resolve from root scope.
+        //    return instance;
+        //}
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls

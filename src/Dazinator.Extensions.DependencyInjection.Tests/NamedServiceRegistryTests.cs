@@ -149,6 +149,32 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
 
         #endregion
 
+        #region Scoped
+
+        [Fact]
+        public void Can_Add_Scoped_Type_Registrations()
+        {
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations.AddScoped("A");
+            namedRegistrations.AddScoped<BearService>("B");
+
+            var registeredA = namedRegistrations["A"];
+
+            Assert.NotNull(registeredA);
+            Assert.Equal(Lifetime.Scoped, registeredA.Lifetime);
+            Assert.False(registeredA.RegistrationOwnsInstance);
+            Assert.Equal(typeof(AnimalService), registeredA.ImplementationType);
+
+            var registeredB = namedRegistrations["B"];
+
+            Assert.NotNull(registeredB);
+            Assert.Equal(Lifetime.Scoped, registeredB.Lifetime);
+            Assert.False(registeredB.RegistrationOwnsInstance);
+            Assert.Equal(typeof(BearService), registeredB.ImplementationType);
+        }
+
+        #endregion
+
         private IServiceProvider GetDefaultServiceProvider()
         {
             var services = new ServiceCollection();

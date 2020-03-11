@@ -24,9 +24,6 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
                 return resolver.Get(name);
             }));
 
-            // Note: for the trick to work, 
-            // NamedServiceRegistry<TService> must be resolved through the container atleast once,
-            // otherwise it will think it hasn't created an instance, and so it won't call Dispose on it if you dispose the container.
             return services;
         }
     }
