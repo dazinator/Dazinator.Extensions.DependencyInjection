@@ -1,3 +1,12 @@
+| Branch  | DevOps |
+| ------------- | ------------- |
+| Master  | [![Build Status](https://darrelltunnell.visualstudio.com/Public%20Projects/_apis/build/status/dazinator.Dazinator.Extensions.DependencyInjection?branchName=master)](https://darrelltunnell.visualstudio.com/Public%20Projects/_build/latest?definitionId=12&branchName=master) |
+| Develop | [![Build Status](https://darrelltunnell.visualstudio.com/Public%20Projects/_apis/build/status/dazinator.Dazinator.Extensions.DependencyInjection?branchName=develop)](https://darrelltunnell.visualstudio.com/Public%20Projects/_build/latest?definitionId=12&branchName=develop) |
+
+| Package  | Stable | Pre-release |
+| ------------- | --- | --- |
+| Dazinator.Extensions.DependencyInjection  | [![Dazinator.Extensions.DependencyInjection](https://img.shields.io/nuget/v/Dazinator.Extensions.DependencyInjection.svg)](https://www.nuget.org/packages/Dazinator.Extensions.DependencyInjection/) | [![Dazinator.Extensions.DependencyInjection](https://img.shields.io/nuget/vpre/Dazinator.Extensions.DependencyInjection.svg)](https://www.nuget.org/packages/Dazinator.Extensions.DependencyInjection/) | 
+
 ## Register Named Services with Microsoft Dependency Injection
 
 Allows you to register services that can be resolved by name.
@@ -83,23 +92,24 @@ However if you register a named singleton by instance instead of by type, then y
 
 Named transients behave as you would expect - i.e each resolution obtains a new instance.
 
-```
+```csharp
     var services = new ServiceCollection();
     services.AddNamed<AnimalService>(names =>
     {
-        names.AddTransient("E"); // reach resolution yields a new instance of `AnimalService`
+        names.AddTransient("E"); // each resolution yields a new instance of `AnimalService`
         names.AddTransient<LionService>("F"); // reach resolution yields new a new instance of `LionService` which derives from `AnimalService`
     });
+```
 
 ### Disposal
 
-Named transients are not disposed of automatically. If they implement IDisposable then it's down to you to dispose them appropriately.
+Named transients are not disposed of automatically. If they implement `IDisposable` then it's down to you to dispose of them appropriately.
 
 
 ## Scoped
 
-Named scoped services behave as you would expect - i.e each resolution from the same scope yields the same instance.
+Named scoped services behave as you would expect - i.e each resolution of the same named service, from the same scope, will yield the same instance.
 
 ### Disposal
 
-All scoped instances that implement IDisposable will automatically be disposed for you when the current scope is disposed.
+All instances of named scoped services that implement `IDisposable` will automatically be disposed for you, when the current scope is disposed.
