@@ -3,7 +3,7 @@ image: Visual Studio 2019 Preview
 
 install:
   - cmd: choco install gitversion.portable --version 5.0.1 -y
-  - cmd: choco install dotnetcore-sdk --pre
+  - cmd: choco install dotnetcore-sdk --version 3.1.101
 
 before_build:
   - ps: gitversion /l console /output buildserver
@@ -11,6 +11,8 @@ before_build:
 build:
   verbosity: detailed
 build_script:
+- cmd: dotnet tool install -g dotnet-format
+- cmd: dotnet-format -w ./src -v normal --dry-run --check
 - cmd: dotnet restore src --disable-parallel
 - cmd: dotnet build src -c Release --disable-parallel
 - cmd: dotnet pack src -c Release --output %APPVEYOR_BUILD_FOLDER%/artifacts/
