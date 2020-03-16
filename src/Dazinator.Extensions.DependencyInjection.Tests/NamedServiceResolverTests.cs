@@ -1,6 +1,7 @@
 namespace Dazinator.Extensions.DependencyInjection.Tests
 {
     using System.Dynamic;
+    using Dazinator.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection;
     using Xunit;
 
