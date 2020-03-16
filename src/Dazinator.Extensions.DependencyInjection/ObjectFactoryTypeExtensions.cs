@@ -68,6 +68,7 @@ namespace Dazinator.Extensions.DependencyInjection
 
         }
 
+#if NETSTANDARD2_0
         private static void ThrowMultipleCtorsMarkedWithAttributeException()
         {
             throw new InvalidOperationException($"Multiple constructors were marked with {nameof(ActivatorUtilitiesConstructorAttribute)}.");
@@ -77,7 +78,7 @@ namespace Dazinator.Extensions.DependencyInjection
         {
             throw new InvalidOperationException($"Constructor marked with {nameof(ActivatorUtilitiesConstructorAttribute)} does not accept all given argument types.");
         }
-
+#endif
         public static ObjectFactory CreateObjectFactory(this Type instanceType, params object[] parameters)
         {
             int bestLength = -1;
@@ -94,9 +95,12 @@ namespace Dazinator.Extensions.DependencyInjection
                     if (!constructor.IsStatic && constructor.IsPublic)
                     {
                         var matcher = new ConstructorMatcher(constructor);
-                        var isPreferred = constructor.IsDefined(typeof(ActivatorUtilitiesConstructorAttribute), false);
+
+
                         var length = matcher.Match(parameters);
 
+#if NETSTANDARD2_0
+                        var isPreferred = constructor.IsDefined(typeof(ActivatorUtilitiesConstructorAttribute), false);
                         if (isPreferred)
                         {
                             if (seenPreferred)
@@ -109,6 +113,9 @@ namespace Dazinator.Extensions.DependencyInjection
                                 ThrowMarkedCtorDoesNotTakeAllProvidedArguments();
                             }
                         }
+#else
+                        bool isPreferred = false;
+#endif
 
                         if (isPreferred || bestLength < length)
                         {

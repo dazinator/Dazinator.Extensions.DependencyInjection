@@ -1,7 +1,6 @@
 namespace Dazinator.Extensions.DependencyInjection.Tests
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     public class NamedServiceResolver<TService> : IDisposable
     {
