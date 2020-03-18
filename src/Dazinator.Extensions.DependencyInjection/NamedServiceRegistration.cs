@@ -51,6 +51,32 @@ namespace Dazinator.Extensions.DependencyInjection
 
         }
 
+        public NamedServiceRegistration(IServiceProvider serviceProvider, Func<IServiceProvider, TService> implementationFactory, Lifetime lifetime)
+        {
+            Lifetime = lifetime;
+            ImplementationType = null;
+            if (lifetime == Lifetime.Singleton)
+            {
+                RegistrationOwnsInstance = true;
+                var lazySingleton = new Lazy<TService>(() =>
+                {
+                    var instance = implementationFactory(serviceProvider);
+                    if (RegistrationOwnsInstance)
+                    {
+                        _onDispose = () => CheckDispose(instance);
+                    }
+                    return instance;
+                });
+
+                InstanceFactory = (sp) => lazySingleton.Value; // we don't use current scope sp to resolve singletons, we use root sp, as we don't want singletons to capture scoped references (scoped references can be disposed).
+            }
+            else if (lifetime == Lifetime.Transient || lifetime == Lifetime.Scoped)
+            {
+                RegistrationOwnsInstance = false;
+                InstanceFactory = implementationFactory;
+            }
+
+        }
         private void CheckDispose(TService instance)
         {
             if (instance is IDisposable)

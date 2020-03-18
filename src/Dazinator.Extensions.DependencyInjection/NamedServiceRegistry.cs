@@ -34,6 +34,12 @@ namespace Dazinator.Extensions.DependencyInjection
             _namedRegistrations.Add(name, registration);
         }
 
+        public void AddSingleton(string name, Func<IServiceProvider, TService> factoryFunc)
+        {
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, factoryFunc, Lifetime.Singleton);
+            _namedRegistrations.Add(name, registration);
+        }
+
         /// <summary>
         /// Add an instance to be obtained by name.
         /// </summary>
@@ -60,6 +66,12 @@ namespace Dazinator.Extensions.DependencyInjection
             var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TConcreteType), Lifetime.Transient);
             _namedRegistrations.Add(name, registration);
         }
+
+        public void AddTransient(string name, Func<object, TService> factoryFunc)
+        {
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, factoryFunc, Lifetime.Transient);
+            _namedRegistrations.Add(name, registration);
+        }
         #endregion
 
         #region Scoped
@@ -77,6 +89,11 @@ namespace Dazinator.Extensions.DependencyInjection
             _namedRegistrations.Add(name, registration);
         }
 
+        public void AddScoped(string name, Func<object, TService> factoryFunc)
+        {
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, factoryFunc, Lifetime.Scoped);
+            _namedRegistrations.Add(name, registration);
+        }
         #endregion
         public NamedServiceRegistration<TService> GetRegistration(string name) => _namedRegistrations[name];
 

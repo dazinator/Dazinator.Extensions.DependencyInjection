@@ -19,12 +19,15 @@ Allows you to register services that can be resolved by name.
         names.AddSingleton<BearService>("B");
         names.AddSingleton("C", new BearService());
         names.AddSingleton("D", new BearService() { SomeProperty = true });
+        names.AddSingleton("FOO", (sp) => new BearService());            
         
         names.AddTransient("E");
         names.AddTransient<LionService>("F");
+        names.AddTransient("BAR", (sp) => new LionService());   
 
         names.AddScoped("G");
         names.AddScoped<DisposableTigerService>("H");
+        names.AddScoped("BAZ", (sp) => new DisposableTigerService());   
 
     });
 
@@ -75,7 +78,7 @@ In this case:
 
 ### Disposal
 
-Singletons that implement `IDisposable`, and are registered by type, will be disposed automatically when the named registry itself is disposed (which is also registered as a singleton with your application container).
+Singletons that implement `IDisposable`, and are registered by type or a factory function, will be disposed of automatically when the named registry itself is disposed (which is also registered as a singleton with your application container).
 However if you register a named singleton by instance instead of by type, then you must specify if you want that instance to be disposed for you at the point of registering it. The default assumes you will manage / own the disposal of that instance yourself.
 
 ```csharp
@@ -83,7 +86,9 @@ However if you register a named singleton by instance instead of by type, then y
     {
         names.AddSingleton("A"); // AnimalService will be disposed for you when the named registry (singleton) is disposed if it implements `IDisposable`
         names.AddSingleton<BearService>("B"); // same as above
-        names.AddSingleton("D", new BearService(), registrationOwnsInstance: true); // you provided an instance, you must specify - default is false.
+        names.AddSingleton("C", sp=>new BearService()); // same as above
+        names.AddSingleton("D", new BearService()); // WON'T BE DISPOSED FOR YOU AS YOU OWN THIS INSTANCE'
+        names.AddSingleton("D", new BearService(), registrationOwnsInstance: true); // you provided an instance, but you allow the named registry to own it. It will dispose of it for you.
     }
 
 ```
@@ -96,9 +101,10 @@ Named transients behave as you would expect - i.e each resolution obtains a new 
     var services = new ServiceCollection();
     services.AddNamed<AnimalService>(names =>
     {
-        names.AddTransient("E"); // each resolution yields a new instance of `AnimalService`
-        names.AddTransient<LionService>("F"); // reach resolution yields new a new instance of `LionService` which derives from `AnimalService`
-    });
+        names.AddTransient("E"); // each resolution yields a new instance
+        names.AddTransient<LionService>("F"); // same as above, this time we are returning an instance of a derived class whose constrcutor will be resolved / activated by the DI container.
+        names.AddTransient("G", sp=>new BearService()); // same as above
+   });
 ```
 
 ### Disposal
