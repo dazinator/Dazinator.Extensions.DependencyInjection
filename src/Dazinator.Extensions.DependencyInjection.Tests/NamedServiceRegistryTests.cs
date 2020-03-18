@@ -86,7 +86,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         public void Can_Add_Singleton_FactoryFunc_Registrations()
         {
             var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
-            namedRegistrations.AddSingleton("A", sp=> new AnimalService());
+            namedRegistrations.AddSingleton("A", sp => new AnimalService());
             namedRegistrations.AddSingleton("B", sp => new BearService());
 
             var registeredA = namedRegistrations["A"];
@@ -152,7 +152,8 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             {
                 registry.AddSingleton("A", notOwnedDisposable);
                 registry.AddSingleton("B", ownedDisposable, registrationOwnsInstance: true);
-                registry.AddSingleton("C", (sp)=> {
+                registry.AddSingleton("C", (sp) =>
+                {
                     ownedDisposableFromFactoryFunc = new DisposableTigerService();
                     return ownedDisposableFromFactoryFunc;
                 });
@@ -201,7 +202,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         public void Can_Add_Transient_FactoryFunc_Registrations()
         {
             var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
-            namedRegistrations.AddTransient("A", (sp)=> new AnimalService());
+            namedRegistrations.AddTransient("A", (sp) => new AnimalService());
             namedRegistrations.AddTransient("B", (sp) => new BearService());
 
             var registeredA = namedRegistrations["A"];
@@ -253,7 +254,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         public void Can_Add_Scoped_FactoryFunc_Registrations()
         {
             var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
-            namedRegistrations.AddScoped("A", sp=> new AnimalService());
+            namedRegistrations.AddScoped("A", sp => new AnimalService());
             namedRegistrations.AddScoped("B", sp => new BearService());
 
             var registeredA = namedRegistrations["A"];
