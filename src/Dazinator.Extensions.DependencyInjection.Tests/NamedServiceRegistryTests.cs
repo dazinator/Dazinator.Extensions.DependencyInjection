@@ -265,29 +265,94 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         public void Cannot_Add_Duplicate_Keys()
         {
             var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
-            namedRegistrations.AddTransient("");
-            AssertThrowsDuplicateKey(namedRegistrations, "");
+            namedRegistrations.AddTransient("ABC");
+            AssertThrowsDuplicateKey(namedRegistrations, "ABC");
 
             namedRegistrations.AddScoped("FOO");
             AssertThrowsDuplicateKey(namedRegistrations, "FOO");
 
             namedRegistrations.AddSingleton("BAR");
             AssertThrowsDuplicateKey(namedRegistrations, "BAR");
+
+            // Test registering default name.
+            namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations.AddTransient(); // defaultname = string.Empty
+            AssertThrowsDuplicateKey(namedRegistrations, string.Empty);
+
+            namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations.AddScoped(); // defaultname = string.Empty
+            AssertThrowsDuplicateKey(namedRegistrations, string.Empty);
+
+            namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations.AddSingleton(); // defaultname = string.Empty
+            AssertThrowsDuplicateKey(namedRegistrations, string.Empty);
+
+            // Test registering default name with implementation type
+            namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations.AddTransient<BearService>(); // defaultname = string.Empty
+            AssertThrowsDuplicateKey(namedRegistrations, string.Empty);
+
+            namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations.AddScoped(); // defaultname = string.Empty
+            AssertThrowsDuplicateKey(namedRegistrations, string.Empty);
+
+            namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations.AddSingleton(); // defaultname = string.Empty
+            AssertThrowsDuplicateKey(namedRegistrations, string.Empty);
+
+
         }
 
         private void AssertThrowsDuplicateKey(NamedServiceRegistry<AnimalService> namedRegistrations, string key)
         {
             Assert.Throws<ArgumentException>(() => namedRegistrations.AddTransient(key));
             Assert.Throws<ArgumentException>(() => namedRegistrations.AddTransient(key, (sp) => new AnimalService()));
-            Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Transient));
+            Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Transient, key));
 
             Assert.Throws<ArgumentException>(() => namedRegistrations.AddScoped(key));
-            Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Scoped));
             Assert.Throws<ArgumentException>(() => namedRegistrations.AddScoped(key, (sp) => new AnimalService()));
+            Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Scoped, key));
 
             Assert.Throws<ArgumentException>(() => namedRegistrations.AddSingleton(key));
-            Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Singleton));
             Assert.Throws<ArgumentException>(() => namedRegistrations.AddSingleton(key, (sp) => new AnimalService()));
+            Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Singleton, key));
+
+            if (key == string.Empty)
+            {
+                // transient
+                Assert.Throws<ArgumentException>(() => namedRegistrations.AddTransient());
+                Assert.Throws<ArgumentException>(() => namedRegistrations.AddTransient((sp) => new AnimalService()));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.AddTransient<BearService>());
+                Assert.Throws<ArgumentException>(() => namedRegistrations.AddTransient<BearService>((sp) => new BearService()));
+
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Transient));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Transient, sp=>new AnimalService()));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add<BearService>(ServiceLifetime.Transient));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add<BearService>(ServiceLifetime.Transient, sp => new BearService()));
+
+                // scoped
+                Assert.Throws<ArgumentException>(() => namedRegistrations.AddScoped());
+                Assert.Throws<ArgumentException>(() => namedRegistrations.AddScoped((sp) => new AnimalService()));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.AddScoped<BearService>());
+                Assert.Throws<ArgumentException>(() => namedRegistrations.AddScoped<BearService>((sp) => new BearService()));
+
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Scoped));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Scoped, sp => new AnimalService()));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add<BearService>(ServiceLifetime.Scoped));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add<BearService>(ServiceLifetime.Scoped, sp => new BearService()));
+
+                // singletin
+                Assert.Throws<ArgumentException>(() => namedRegistrations.AddSingleton());
+                Assert.Throws<ArgumentException>(() => namedRegistrations.AddSingleton((sp) => new AnimalService()));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.AddSingleton<BearService>());
+                Assert.Throws<ArgumentException>(() => namedRegistrations.AddSingleton<BearService>((sp) => new BearService()));
+
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Singleton));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Singleton, sp => new AnimalService()));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add<BearService>(ServiceLifetime.Singleton));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add<BearService>(ServiceLifetime.Singleton, sp => new BearService()));
+
+            }
         }
 
         private IServiceProvider GetDefaultServiceProvider()

@@ -25,7 +25,7 @@ namespace Dazinator.Extensions.DependencyInjection
         public void Add<TImplementationType>(ServiceLifetime lifetime = ServiceLifetime.Transient, Func<IServiceProvider, TImplementationType> factoryFunc = null)
     where TImplementationType : TService => Add<TImplementationType>(lifetime, string.Empty, factoryFunc);
 
-        public void Add<TImplementationType>(ServiceLifetime lifetime = ServiceLifetime.Transient, string name = "", Func<IServiceProvider, TImplementationType> factoryFunc = null)
+        public void Add<TImplementationType>(ServiceLifetime lifetime, string name, Func<IServiceProvider, TImplementationType> factoryFunc = null)
             where TImplementationType : TService
         {
             switch (lifetime)
@@ -63,7 +63,9 @@ namespace Dazinator.Extensions.DependencyInjection
             }
         }
 
-        public void Add(ServiceLifetime lifetime = ServiceLifetime.Transient, string name = "", Func<IServiceProvider, TService> factoryFunc = null)
+        public void Add(ServiceLifetime lifetime = ServiceLifetime.Transient, Func<IServiceProvider, TService> factoryFunc = null) => Add(lifetime, string.Empty, factoryFunc);
+
+        public void Add(ServiceLifetime lifetime, string name, Func<IServiceProvider, TService> factoryFunc = null)
         {
             switch (lifetime)
             {
@@ -102,6 +104,21 @@ namespace Dazinator.Extensions.DependencyInjection
         #endregion
 
         #region Singleton
+
+        #region DefaultName
+
+        public void AddSingleton() => AddSingleton(string.Empty);
+
+        public void AddSingleton<TConcreteType>()
+where TConcreteType : TService => AddSingleton<TConcreteType>(string.Empty);
+
+        public void AddSingleton(Func<IServiceProvider, TService> factoryFunc) => AddSingleton(string.Empty, factoryFunc);
+
+        public void AddSingleton<TImplementationType>(Func<IServiceProvider, TImplementationType> factoryFunc)
+    where TImplementationType : TService => AddSingleton<TImplementationType>(string.Empty, factoryFunc);
+
+        #endregion
+
         public void AddSingleton(string name)
         {
             var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TService), ServiceLifetime.Singleton);
@@ -142,6 +159,21 @@ namespace Dazinator.Extensions.DependencyInjection
         #endregion
 
         #region Transient
+
+        #region DefaultName
+
+        public void AddTransient() => AddTransient(string.Empty);
+
+        public void AddTransient<TConcreteType>()
+     where TConcreteType : TService => AddTransient<TConcreteType>(string.Empty);
+
+        public void AddTransient(Func<IServiceProvider, TService> factoryFunc) => AddTransient(string.Empty, factoryFunc);
+
+        public void AddTransient<TImplementationType>(Func<IServiceProvider, TImplementationType> factoryFunc)
+    where TImplementationType : TService => AddTransient<TImplementationType>(string.Empty, factoryFunc);
+
+        #endregion
+
         public void AddTransient(string name)
         {
             var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TService), ServiceLifetime.Transient);
@@ -170,6 +202,20 @@ namespace Dazinator.Extensions.DependencyInjection
         #endregion
 
         #region Scoped
+
+        #region DefaultName
+
+        public void AddScoped() => AddScoped(string.Empty);
+
+        public void AddScoped<TConcreteType>()
+where TConcreteType : TService => AddScoped<TConcreteType>(string.Empty);
+
+        public void AddScoped(Func<IServiceProvider, TService> factoryFunc) => AddScoped(string.Empty, factoryFunc);
+
+        public void AddScoped<TImplementationType>(Func<IServiceProvider, TImplementationType> factoryFunc)
+    where TImplementationType : TService => AddScoped<TImplementationType>(string.Empty, factoryFunc);
+
+        #endregion
 
         public void AddScoped(string name)
         {
