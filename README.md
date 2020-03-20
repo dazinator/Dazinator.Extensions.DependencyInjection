@@ -15,6 +15,7 @@ Allows you to register services that can be resolved by name.
     var services = new ServiceCollection();
     services.AddNamed<AnimalService>(names =>
     {
+        names.AddSingleton(); // defaults to name of String.Empty
         names.AddSingleton("A"); 
         names.AddSingleton<BearService>("B");
         names.AddSingleton("C", new BearService());

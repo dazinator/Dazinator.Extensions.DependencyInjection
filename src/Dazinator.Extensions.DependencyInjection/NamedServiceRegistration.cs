@@ -20,7 +20,7 @@ namespace Dazinator.Extensions.DependencyInjection
             }
         }
 
-        public NamedServiceRegistration(IServiceProvider serviceProvider, Type implementationType, ServiceLifetime lifetime)
+        public NamedServiceRegistration(Func<IServiceProvider> serviceProvider, Type implementationType, ServiceLifetime lifetime)
         {
             Lifetime = lifetime;
             ImplementationType = implementationType;
@@ -30,7 +30,8 @@ namespace Dazinator.Extensions.DependencyInjection
                 var lazySingleton = new Lazy<TService>(() =>
                 {
                     // Perf: we don't worry about calling CreateInstance for singletons - it won't happen often!
-                    var instance = (TService)Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance(serviceProvider, ImplementationType);
+                    var sp = serviceProvider();
+                    var instance = (TService)ActivatorUtilities.CreateInstance(sp, ImplementationType);
                     if (RegistrationOwnsInstance)
                     {
                         _onDispose = () => CheckDispose(instance);
@@ -52,7 +53,7 @@ namespace Dazinator.Extensions.DependencyInjection
 
         }
 
-        public NamedServiceRegistration(IServiceProvider serviceProvider, Func<IServiceProvider, TService> implementationFactory, ServiceLifetime lifetime)
+        public NamedServiceRegistration(Func<IServiceProvider> serviceProvider, Func<IServiceProvider, TService> implementationFactory, ServiceLifetime lifetime)
         {
             Lifetime = lifetime;
             ImplementationType = null;
@@ -61,7 +62,8 @@ namespace Dazinator.Extensions.DependencyInjection
                 RegistrationOwnsInstance = true;
                 var lazySingleton = new Lazy<TService>(() =>
                 {
-                    var instance = implementationFactory(serviceProvider);
+                    var sp = serviceProvider();
+                    var instance = implementationFactory(sp);
                     if (RegistrationOwnsInstance)
                     {
                         _onDispose = () => CheckDispose(instance);
@@ -92,11 +94,6 @@ namespace Dazinator.Extensions.DependencyInjection
 
         public ServiceLifetime Lifetime { get; }
         public bool RegistrationOwnsInstance { get; }
-        //public TService GetOrCreateInstance(IServiceProvider serviceProvider = null)
-        //{
-        //    var instance = InstanceFactory(serviceProvider); // when resolving singletones, we disregard current scope (serviceProvider) and resolve from root scope.
-        //    return instance;
-        //}
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls

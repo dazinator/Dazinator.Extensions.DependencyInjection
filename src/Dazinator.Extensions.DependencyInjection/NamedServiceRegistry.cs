@@ -10,14 +10,15 @@ namespace Dazinator.Extensions.DependencyInjection
     /// <typeparam name="TService"></typeparam>
     public class NamedServiceRegistry<TService> : IDisposable
     {
-        private readonly IServiceProvider _serviceProvider;
         private readonly IDictionary<string, NamedServiceRegistration<TService>> _namedRegistrations;
 
-        public NamedServiceRegistry(IServiceProvider serviceProvider)
+        public NamedServiceRegistry()
         {
-            _serviceProvider = serviceProvider;
+            //_serviceProvider = serviceProvider;
             _namedRegistrations = new Dictionary<string, NamedServiceRegistration<TService>>();
         }
+
+        public IServiceProvider ServiceProvider { get; set; }
 
         public NamedServiceRegistration<TService> this[string name] => GetRegistration(name);
 
@@ -121,27 +122,36 @@ where TConcreteType : TService => AddSingleton<TConcreteType>(string.Empty);
 
         public void AddSingleton(string name)
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TService), ServiceLifetime.Singleton);
+            var registration = new NamedServiceRegistration<TService>(GetServiceProvider, typeof(TService), ServiceLifetime.Singleton);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddSingleton<TConcreteType>(string name)
             where TConcreteType : TService
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TConcreteType), ServiceLifetime.Singleton);
+            var registration = new NamedServiceRegistration<TService>(GetServiceProvider, typeof(TConcreteType), ServiceLifetime.Singleton);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddSingleton(string name, Func<IServiceProvider, TService> factoryFunc)
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, factoryFunc, ServiceLifetime.Singleton);
+            var registration = new NamedServiceRegistration<TService>(GetServiceProvider, factoryFunc, ServiceLifetime.Singleton);
             _namedRegistrations.Add(name, registration);
+        }
+
+        private IServiceProvider GetServiceProvider()
+        {
+            if(ServiceProvider == null)
+            {
+                throw new InvalidOperationException("Service provider is null");
+            }
+            return ServiceProvider;
         }
 
         public void AddSingleton<TImplementationType>(string name, Func<IServiceProvider, TImplementationType> factoryFunc)
           where TImplementationType : TService
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, (sp) => factoryFunc(sp), ServiceLifetime.Singleton);
+            var registration = new NamedServiceRegistration<TService>(GetServiceProvider, (sp) => factoryFunc(sp), ServiceLifetime.Singleton);
             _namedRegistrations.Add(name, registration);
         }
 
@@ -176,27 +186,27 @@ where TConcreteType : TService => AddSingleton<TConcreteType>(string.Empty);
 
         public void AddTransient(string name)
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TService), ServiceLifetime.Transient);
+            var registration = new NamedServiceRegistration<TService>(GetServiceProvider, typeof(TService), ServiceLifetime.Transient);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddTransient<TConcreteType>(string name)
            where TConcreteType : TService
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TConcreteType), ServiceLifetime.Transient);
+            var registration = new NamedServiceRegistration<TService>(GetServiceProvider, typeof(TConcreteType), ServiceLifetime.Transient);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddTransient(string name, Func<IServiceProvider, TService> factoryFunc)
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, factoryFunc, ServiceLifetime.Transient);
+            var registration = new NamedServiceRegistration<TService>(GetServiceProvider, factoryFunc, ServiceLifetime.Transient);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddTransient<TImplementationType>(string name, Func<IServiceProvider, TImplementationType> factoryFunc)
            where TImplementationType : TService
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, (sp) => factoryFunc(sp), ServiceLifetime.Transient);
+            var registration = new NamedServiceRegistration<TService>(GetServiceProvider, (sp) => factoryFunc(sp), ServiceLifetime.Transient);
             _namedRegistrations.Add(name, registration);
         }
         #endregion
@@ -219,27 +229,27 @@ where TConcreteType : TService => AddScoped<TConcreteType>(string.Empty);
 
         public void AddScoped(string name)
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TService), ServiceLifetime.Scoped);
+            var registration = new NamedServiceRegistration<TService>(GetServiceProvider, typeof(TService), ServiceLifetime.Scoped);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddScoped<TConcreteType>(string name)
          where TConcreteType : TService
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TConcreteType), ServiceLifetime.Scoped);
+            var registration = new NamedServiceRegistration<TService>(GetServiceProvider, typeof(TConcreteType), ServiceLifetime.Scoped);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddScoped(string name, Func<IServiceProvider, TService> factoryFunc)
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, factoryFunc, ServiceLifetime.Scoped);
+            var registration = new NamedServiceRegistration<TService>(GetServiceProvider, factoryFunc, ServiceLifetime.Scoped);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddScoped<TImplementationType>(string name, Func<IServiceProvider, TImplementationType> factoryFunc)
             where TImplementationType : TService
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, (sp) => factoryFunc(sp), ServiceLifetime.Scoped);
+            var registration = new NamedServiceRegistration<TService>(GetServiceProvider, (sp) => factoryFunc(sp), ServiceLifetime.Scoped);
             _namedRegistrations.Add(name, registration);
         }
         #endregion

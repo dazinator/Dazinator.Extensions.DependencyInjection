@@ -13,7 +13,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         [Fact]
         public void Can_Add_Singleton_Instance_Registrations()
         {
-            var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddSingleton("A", new AnimalService() { SomeProperty = "A" });
             namedRegistrations.AddSingleton("B", new AnimalService() { SomeProperty = "B" });
             namedRegistrations.AddSingleton("C", new BearService() { SomeProperty = "C" });
@@ -61,7 +61,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         [Fact]
         public void Can_Add_Singleton_Type_Registrations()
         {
-            var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddSingleton("A");
             namedRegistrations.AddSingleton<BearService>("B");
             namedRegistrations.Add(ServiceLifetime.Singleton, "C");
@@ -79,7 +79,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         [Fact]
         public void Can_Add_Singleton_FactoryFunc_Registrations()
         {
-            var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddSingleton("A", sp => new AnimalService());
             namedRegistrations.AddSingleton("B", sp => new BearService());
             namedRegistrations.Add(ServiceLifetime.Singleton, "C", (sp) => new AnimalService());
@@ -97,7 +97,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         [Fact]
         public void Can_Add_MixtureOf_Registrations()
         {
-            var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.Add(ServiceLifetime.Singleton); // same as .AddSingleton(string.Empty); 
             namedRegistrations.AddSingleton("A", new AnimalService() { SomeProperty = "A" });
             namedRegistrations.AddSingleton("B", new LionService() { SomeProperty = "B", SomeOtherProperty = true });
@@ -120,7 +120,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var disposable = new DisposableTigerService() { SomeProperty = "Should be disposed." };
             var disposableShouldNotBeDisposed = new DisposableTigerService() { SomeProperty = "Should NOT be disposed." };
 
-            using (var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider()))
+            using (var namedRegistrations = new NamedServiceRegistry<AnimalService>())
             {
                 namedRegistrations.AddSingleton("A", disposableShouldNotBeDisposed);
                 namedRegistrations.AddSingleton("B", disposable, registrationOwnsInstance: true); // This param defaults to false, must specifiy true if you want instance to be disposed by service provider dispose().
@@ -167,7 +167,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         [Fact]
         public void Can_Add_Transient_Type_Registrations()
         {
-            var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddTransient("A");
             namedRegistrations.AddTransient<BearService>("B");
             namedRegistrations.Add(ServiceLifetime.Transient, "C");
@@ -185,7 +185,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         [Fact]
         public void Can_Add_Transient_FactoryFunc_Registrations()
         {
-            var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddTransient("A", (sp) => new AnimalService());
             namedRegistrations.AddTransient("B", (sp) => new BearService());
             namedRegistrations.Add(ServiceLifetime.Transient, "C", (sp) => new AnimalService());
@@ -208,7 +208,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         [Fact]
         public void Can_Add_Scoped_Type_Registrations()
         {
-            var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddScoped("A");
             namedRegistrations.AddScoped<BearService>("B");
             namedRegistrations.Add(ServiceLifetime.Scoped, "C");
@@ -225,7 +225,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         [Fact]
         public void Can_Add_Scoped_FactoryFunc_Registrations()
         {
-            var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddScoped("A", sp => new AnimalService());
             namedRegistrations.AddScoped("B", sp => new BearService());
             namedRegistrations.Add(ServiceLifetime.Scoped, "C", (sp) => new AnimalService());
@@ -264,7 +264,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         [Fact]
         public void Cannot_Add_Duplicate_Keys()
         {
-            var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddTransient("ABC");
             AssertThrowsDuplicateKey(namedRegistrations, "ABC");
 
@@ -275,28 +275,28 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             AssertThrowsDuplicateKey(namedRegistrations, "BAR");
 
             // Test registering default name.
-            namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddTransient(); // defaultname = string.Empty
             AssertThrowsDuplicateKey(namedRegistrations, string.Empty);
 
-            namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddScoped(); // defaultname = string.Empty
             AssertThrowsDuplicateKey(namedRegistrations, string.Empty);
 
-            namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddSingleton(); // defaultname = string.Empty
             AssertThrowsDuplicateKey(namedRegistrations, string.Empty);
 
             // Test registering default name with implementation type
-            namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddTransient<BearService>(); // defaultname = string.Empty
             AssertThrowsDuplicateKey(namedRegistrations, string.Empty);
 
-            namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddScoped(); // defaultname = string.Empty
             AssertThrowsDuplicateKey(namedRegistrations, string.Empty);
 
-            namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations = new NamedServiceRegistry<AnimalService>();
             namedRegistrations.AddSingleton(); // defaultname = string.Empty
             AssertThrowsDuplicateKey(namedRegistrations, string.Empty);
 

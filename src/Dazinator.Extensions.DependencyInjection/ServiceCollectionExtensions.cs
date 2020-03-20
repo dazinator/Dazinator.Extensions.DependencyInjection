@@ -7,11 +7,23 @@ namespace Dazinator.Extensions.DependencyInjection
     {
         public static IServiceCollection AddNamed<TService>(this IServiceCollection services, Action<NamedServiceRegistry<TService>> configure)
         {
+            var registry = new NamedServiceRegistry<TService>();
+            configure(registry);
+
+            //var registry = new NamedServiceRegistry<TService>(()=> {
+
+            //    services.AddSingleton(sp =>
+            //    {
+            //        registry.
+            //        configure(registry);
+            //        return registry;
+            //    });
+
+            //});
 
             services.AddSingleton(sp =>
             {
-                var registry = new NamedServiceRegistry<TService>(sp);
-                configure(registry);
+                registry.ServiceProvider = sp;
                 return registry;
             });
 
