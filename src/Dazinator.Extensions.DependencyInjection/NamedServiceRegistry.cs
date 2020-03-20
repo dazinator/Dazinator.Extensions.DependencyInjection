@@ -2,6 +2,7 @@ namespace Dazinator.Extensions.DependencyInjection
 {
     using System;
     using System.Collections.Generic;
+    using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
     /// Register different 
@@ -20,23 +21,107 @@ namespace Dazinator.Extensions.DependencyInjection
 
         public NamedServiceRegistration<TService> this[string name] => GetRegistration(name);
 
+        #region Add
+        public void Add<TImplementationType>(ServiceLifetime lifetime = ServiceLifetime.Transient, string name = "", Func<IServiceProvider, TImplementationType> factoryFunc = null)
+            where TImplementationType : TService
+        {
+            switch (lifetime)
+            {
+                case ServiceLifetime.Scoped:
+                    if (factoryFunc == null)
+                    {
+                        AddScoped<TImplementationType>(name);
+                    }
+                    else
+                    {
+                        AddScoped(name, factoryFunc);
+                    }
+                    break;
+                case ServiceLifetime.Singleton:
+                    if (factoryFunc == null)
+                    {
+                        AddSingleton<TImplementationType>(name);
+                    }
+                    else
+                    {
+                        AddSingleton(name, factoryFunc);
+                    }
+                    break;
+                case ServiceLifetime.Transient:
+                    if (factoryFunc == null)
+                    {
+                        AddTransient<TImplementationType>(name);
+                    }
+                    else
+                    {
+                        AddSingleton(name, factoryFunc);
+                    }
+                    break;
+            }
+        }
+
+        public void Add(ServiceLifetime lifetime = ServiceLifetime.Transient, string name = "", Func<IServiceProvider, TService> factoryFunc = null)
+        {
+            switch (lifetime)
+            {
+                case ServiceLifetime.Scoped:
+                    if (factoryFunc == null)
+                    {
+                        AddScoped(name);
+                    }
+                    else
+                    {
+                        AddScoped(name, factoryFunc);
+                    }
+                    break;
+                case ServiceLifetime.Singleton:
+                    if (factoryFunc == null)
+                    {
+                        AddSingleton(name);
+                    }
+                    else
+                    {
+                        AddSingleton(name, factoryFunc);
+                    }
+                    break;
+                case ServiceLifetime.Transient:
+                    if (factoryFunc == null)
+                    {
+                        AddTransient(name);
+                    }
+                    else
+                    {
+                        AddSingleton(name, factoryFunc);
+                    }
+                    break;
+            }
+        }
+        #endregion
+
         #region Singleton
         public void AddSingleton(string name)
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TService), Lifetime.Singleton);
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TService), ServiceLifetime.Singleton);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddSingleton<TConcreteType>(string name)
             where TConcreteType : TService
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TConcreteType), Lifetime.Singleton);
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TConcreteType), ServiceLifetime.Singleton);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddSingleton(string name, Func<IServiceProvider, TService> factoryFunc)
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, factoryFunc, Lifetime.Singleton);
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, factoryFunc, ServiceLifetime.Singleton);
+            _namedRegistrations.Add(name, registration);
+        }
+
+        public void AddSingleton<TImplementationType>(string name, Func<IServiceProvider, TImplementationType> factoryFunc)
+          where TImplementationType : TService
+        {
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, (sp) => factoryFunc(sp), ServiceLifetime.Singleton);
             _namedRegistrations.Add(name, registration);
         }
 
@@ -56,20 +141,27 @@ namespace Dazinator.Extensions.DependencyInjection
         #region Transient
         public void AddTransient(string name)
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TService), Lifetime.Transient);
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TService), ServiceLifetime.Transient);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddTransient<TConcreteType>(string name)
            where TConcreteType : TService
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TConcreteType), Lifetime.Transient);
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TConcreteType), ServiceLifetime.Transient);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddTransient(string name, Func<IServiceProvider, TService> factoryFunc)
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, factoryFunc, Lifetime.Transient);
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, factoryFunc, ServiceLifetime.Transient);
+            _namedRegistrations.Add(name, registration);
+        }
+
+        public void AddTransient<TImplementationType>(string name, Func<IServiceProvider, TImplementationType> factoryFunc)
+           where TImplementationType : TService
+        {
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, (sp) => factoryFunc(sp), ServiceLifetime.Transient);
             _namedRegistrations.Add(name, registration);
         }
         #endregion
@@ -78,20 +170,27 @@ namespace Dazinator.Extensions.DependencyInjection
 
         public void AddScoped(string name)
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TService), Lifetime.Scoped);
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TService), ServiceLifetime.Scoped);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddScoped<TConcreteType>(string name)
          where TConcreteType : TService
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TConcreteType), Lifetime.Scoped);
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, typeof(TConcreteType), ServiceLifetime.Scoped);
             _namedRegistrations.Add(name, registration);
         }
 
         public void AddScoped(string name, Func<IServiceProvider, TService> factoryFunc)
         {
-            var registration = new NamedServiceRegistration<TService>(_serviceProvider, factoryFunc, Lifetime.Scoped);
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, factoryFunc, ServiceLifetime.Scoped);
+            _namedRegistrations.Add(name, registration);
+        }
+
+        public void AddScoped<TImplementationType>(string name, Func<IServiceProvider, TImplementationType> factoryFunc)
+            where TImplementationType : TService
+        {
+            var registration = new NamedServiceRegistration<TService>(_serviceProvider, (sp) => factoryFunc(sp), ServiceLifetime.Scoped);
             _namedRegistrations.Add(name, registration);
         }
         #endregion

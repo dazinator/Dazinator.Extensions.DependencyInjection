@@ -24,13 +24,13 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredB = namedRegistrations["B"];
 
             Assert.NotNull(registeredA);
-            Assert.Equal(Lifetime.Singleton, registeredA.Lifetime);
+            Assert.Equal(ServiceLifetime.Singleton, registeredA.Lifetime);
             Assert.False(registeredA.RegistrationOwnsInstance);
             Assert.Null(registeredA.ImplementationType);
             Assert.NotNull(registeredA.InstanceFactory);
 
             Assert.NotNull(registeredB);
-            Assert.Equal(Lifetime.Singleton, registeredB.Lifetime);
+            Assert.Equal(ServiceLifetime.Singleton, registeredB.Lifetime);
             Assert.False(registeredB.RegistrationOwnsInstance);
             Assert.Null(registeredB.ImplementationType);
             Assert.NotNull(registeredB.InstanceFactory);
@@ -39,20 +39,20 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredD = namedRegistrations["D"];
 
             Assert.NotNull(registeredC);
-            Assert.Equal(Lifetime.Singleton, registeredC.Lifetime);
+            Assert.Equal(ServiceLifetime.Singleton, registeredC.Lifetime);
             Assert.False(registeredC.RegistrationOwnsInstance);
             Assert.Null(registeredC.ImplementationType);
             Assert.NotNull(registeredC.InstanceFactory);
 
             Assert.NotNull(registeredD);
-            Assert.Equal(Lifetime.Singleton, registeredD.Lifetime);
+            Assert.Equal(ServiceLifetime.Singleton, registeredD.Lifetime);
             Assert.False(registeredD.RegistrationOwnsInstance);
             Assert.Null(registeredD.ImplementationType);
             Assert.NotNull(registeredD.InstanceFactory);
 
             var registeredE = namedRegistrations["E"];
             Assert.True(registeredE.RegistrationOwnsInstance);
-            Assert.Equal(Lifetime.Singleton, registeredE.Lifetime);
+            Assert.Equal(ServiceLifetime.Singleton, registeredE.Lifetime);
             Assert.Null(registeredE.ImplementationType);
             Assert.NotNull(registeredE.InstanceFactory);
 
@@ -68,7 +68,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredA = namedRegistrations["A"];
 
             Assert.NotNull(registeredA);
-            Assert.Equal(Lifetime.Singleton, registeredA.Lifetime);
+            Assert.Equal(ServiceLifetime.Singleton, registeredA.Lifetime);
             Assert.True(registeredA.RegistrationOwnsInstance);
             Assert.Equal(typeof(AnimalService), registeredA.ImplementationType);
             Assert.NotNull(registeredA.InstanceFactory);
@@ -76,7 +76,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredB = namedRegistrations["B"];
 
             Assert.NotNull(registeredB);
-            Assert.Equal(Lifetime.Singleton, registeredB.Lifetime);
+            Assert.Equal(ServiceLifetime.Singleton, registeredB.Lifetime);
             Assert.True(registeredB.RegistrationOwnsInstance);
             Assert.Equal(typeof(BearService), registeredB.ImplementationType);
             Assert.NotNull(registeredB.InstanceFactory);
@@ -92,7 +92,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredA = namedRegistrations["A"];
 
             Assert.NotNull(registeredA);
-            Assert.Equal(Lifetime.Singleton, registeredA.Lifetime);
+            Assert.Equal(ServiceLifetime.Singleton, registeredA.Lifetime);
             Assert.True(registeredA.RegistrationOwnsInstance);
             Assert.Null(registeredA.ImplementationType);
             Assert.NotNull(registeredA.InstanceFactory);
@@ -100,7 +100,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredB = namedRegistrations["B"];
 
             Assert.NotNull(registeredB);
-            Assert.Equal(Lifetime.Singleton, registeredB.Lifetime);
+            Assert.Equal(ServiceLifetime.Singleton, registeredB.Lifetime);
             Assert.True(registeredB.RegistrationOwnsInstance);
             Assert.Null(registeredB.ImplementationType);
             Assert.NotNull(registeredB.InstanceFactory);
@@ -111,6 +111,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         public void Can_Add_MixtureOf_Registrations()
         {
             var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations.Add(ServiceLifetime.Singleton); // same as .AddSingleton(string.Empty); 
             namedRegistrations.AddSingleton("A", new AnimalService() { SomeProperty = "A" });
             namedRegistrations.AddSingleton("B", new LionService() { SomeProperty = "B", SomeOtherProperty = true });
             namedRegistrations.AddSingleton<TigerService>("C");
@@ -122,6 +123,8 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             Assert.NotNull(namedRegistrations["C"]);
             Assert.NotNull(namedRegistrations["D"]);
             Assert.NotNull(namedRegistrations["E"]);
+
+            Assert.NotNull(namedRegistrations[""]);
         }
 
         [Fact]
@@ -184,7 +187,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredA = namedRegistrations["A"];
 
             Assert.NotNull(registeredA);
-            Assert.Equal(Lifetime.Transient, registeredA.Lifetime);
+            Assert.Equal(ServiceLifetime.Transient, registeredA.Lifetime);
             Assert.False(registeredA.RegistrationOwnsInstance);
             Assert.Equal(typeof(AnimalService), registeredA.ImplementationType);
             Assert.NotNull(registeredA.InstanceFactory);
@@ -192,7 +195,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredB = namedRegistrations["B"];
 
             Assert.NotNull(registeredB);
-            Assert.Equal(Lifetime.Transient, registeredB.Lifetime);
+            Assert.Equal(ServiceLifetime.Transient, registeredB.Lifetime);
             Assert.False(registeredB.RegistrationOwnsInstance);
             Assert.Equal(typeof(BearService), registeredB.ImplementationType);
             Assert.NotNull(registeredB.InstanceFactory);
@@ -208,7 +211,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredA = namedRegistrations["A"];
 
             Assert.NotNull(registeredA);
-            Assert.Equal(Lifetime.Transient, registeredA.Lifetime);
+            Assert.Equal(ServiceLifetime.Transient, registeredA.Lifetime);
             Assert.False(registeredA.RegistrationOwnsInstance);
             Assert.Null(registeredA.ImplementationType);
             Assert.NotNull(registeredA.InstanceFactory);
@@ -216,7 +219,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredB = namedRegistrations["B"];
 
             Assert.NotNull(registeredB);
-            Assert.Equal(Lifetime.Transient, registeredB.Lifetime);
+            Assert.Equal(ServiceLifetime.Transient, registeredB.Lifetime);
             Assert.False(registeredB.RegistrationOwnsInstance);
             Assert.Null(registeredB.ImplementationType);
             Assert.NotNull(registeredB.InstanceFactory);
@@ -236,7 +239,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredA = namedRegistrations["A"];
 
             Assert.NotNull(registeredA);
-            Assert.Equal(Lifetime.Scoped, registeredA.Lifetime);
+            Assert.Equal(ServiceLifetime.Scoped, registeredA.Lifetime);
             Assert.False(registeredA.RegistrationOwnsInstance);
             Assert.Equal(typeof(AnimalService), registeredA.ImplementationType);
             Assert.NotNull(registeredA.InstanceFactory);
@@ -244,7 +247,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredB = namedRegistrations["B"];
 
             Assert.NotNull(registeredB);
-            Assert.Equal(Lifetime.Scoped, registeredB.Lifetime);
+            Assert.Equal(ServiceLifetime.Scoped, registeredB.Lifetime);
             Assert.False(registeredB.RegistrationOwnsInstance);
             Assert.Equal(typeof(BearService), registeredB.ImplementationType);
             Assert.NotNull(registeredB.InstanceFactory);
@@ -260,7 +263,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredA = namedRegistrations["A"];
 
             Assert.NotNull(registeredA);
-            Assert.Equal(Lifetime.Scoped, registeredA.Lifetime);
+            Assert.Equal(ServiceLifetime.Scoped, registeredA.Lifetime);
             Assert.False(registeredA.RegistrationOwnsInstance);
             Assert.Null(registeredA.ImplementationType);
             Assert.NotNull(registeredA.InstanceFactory);
@@ -268,7 +271,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var registeredB = namedRegistrations["B"];
 
             Assert.NotNull(registeredB);
-            Assert.Equal(Lifetime.Scoped, registeredB.Lifetime);
+            Assert.Equal(ServiceLifetime.Scoped, registeredB.Lifetime);
             Assert.False(registeredB.RegistrationOwnsInstance);
             Assert.Null(registeredB.ImplementationType);
             Assert.NotNull(registeredB.InstanceFactory);

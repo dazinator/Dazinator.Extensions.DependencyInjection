@@ -2,6 +2,8 @@ namespace Dazinator.Extensions.DependencyInjection
 {
     using System;
     using System.Collections.Generic;
+    using Microsoft.Extensions.DependencyInjection;
+
     public class NamedServiceResolver<TService> : IDisposable
     {
         private readonly IServiceProvider _serviceProvider;
@@ -30,7 +32,7 @@ namespace Dazinator.Extensions.DependencyInjection
             {
                 throw new KeyNotFoundException(name);
             }
-            if (item.Lifetime != Lifetime.Scoped)
+            if (item.Lifetime != ServiceLifetime.Scoped)
             {
                 var result = item.InstanceFactory(_serviceProvider);
                 return result;
