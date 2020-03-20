@@ -64,22 +64,16 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
             namedRegistrations.AddSingleton("A");
             namedRegistrations.AddSingleton<BearService>("B");
+            namedRegistrations.Add(ServiceLifetime.Singleton, "C");
+            namedRegistrations.Add<BearService>(ServiceLifetime.Singleton, "D");
+            namedRegistrations.Add(ServiceLifetime.Singleton);
 
-            var registeredA = namedRegistrations["A"];
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Singleton, namedRegistrations["A"]);
+            AssertRegistration<AnimalService, BearService>(ServiceLifetime.Singleton, namedRegistrations["B"]);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Singleton, namedRegistrations["C"]);
+            AssertRegistration<AnimalService, BearService>(ServiceLifetime.Singleton, namedRegistrations["D"]);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Singleton, namedRegistrations[""]);
 
-            Assert.NotNull(registeredA);
-            Assert.Equal(ServiceLifetime.Singleton, registeredA.Lifetime);
-            Assert.True(registeredA.RegistrationOwnsInstance);
-            Assert.Equal(typeof(AnimalService), registeredA.ImplementationType);
-            Assert.NotNull(registeredA.InstanceFactory);
-
-            var registeredB = namedRegistrations["B"];
-
-            Assert.NotNull(registeredB);
-            Assert.Equal(ServiceLifetime.Singleton, registeredB.Lifetime);
-            Assert.True(registeredB.RegistrationOwnsInstance);
-            Assert.Equal(typeof(BearService), registeredB.ImplementationType);
-            Assert.NotNull(registeredB.InstanceFactory);
         }
 
         [Fact]
@@ -88,22 +82,15 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
             namedRegistrations.AddSingleton("A", sp => new AnimalService());
             namedRegistrations.AddSingleton("B", sp => new BearService());
+            namedRegistrations.Add(ServiceLifetime.Singleton, "C", (sp) => new AnimalService());
+            namedRegistrations.Add<BearService>(ServiceLifetime.Singleton, "D", (sp) => new BearService());
+            namedRegistrations.Add(ServiceLifetime.Singleton, (sp) => new AnimalService());
 
-            var registeredA = namedRegistrations["A"];
-
-            Assert.NotNull(registeredA);
-            Assert.Equal(ServiceLifetime.Singleton, registeredA.Lifetime);
-            Assert.True(registeredA.RegistrationOwnsInstance);
-            Assert.Null(registeredA.ImplementationType);
-            Assert.NotNull(registeredA.InstanceFactory);
-
-            var registeredB = namedRegistrations["B"];
-
-            Assert.NotNull(registeredB);
-            Assert.Equal(ServiceLifetime.Singleton, registeredB.Lifetime);
-            Assert.True(registeredB.RegistrationOwnsInstance);
-            Assert.Null(registeredB.ImplementationType);
-            Assert.NotNull(registeredB.InstanceFactory);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Singleton, namedRegistrations["A"], true);
+            AssertRegistration<AnimalService, BearService>(ServiceLifetime.Singleton, namedRegistrations["B"], true);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Singleton, namedRegistrations["C"], true);
+            AssertRegistration<AnimalService, BearService>(ServiceLifetime.Singleton, namedRegistrations["D"], true);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Singleton, namedRegistrations[""], true);
 
         }
 
@@ -183,22 +170,16 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
             namedRegistrations.AddTransient("A");
             namedRegistrations.AddTransient<BearService>("B");
+            namedRegistrations.Add(ServiceLifetime.Transient, "C");
+            namedRegistrations.Add<BearService>(ServiceLifetime.Transient, "D");
+            namedRegistrations.Add(ServiceLifetime.Transient);
 
-            var registeredA = namedRegistrations["A"];
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Transient, namedRegistrations["A"]);
+            AssertRegistration<AnimalService, BearService>(ServiceLifetime.Transient, namedRegistrations["B"]);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Transient, namedRegistrations["C"]);
+            AssertRegistration<AnimalService, BearService>(ServiceLifetime.Transient, namedRegistrations["D"]);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Transient, namedRegistrations[""]);
 
-            Assert.NotNull(registeredA);
-            Assert.Equal(ServiceLifetime.Transient, registeredA.Lifetime);
-            Assert.False(registeredA.RegistrationOwnsInstance);
-            Assert.Equal(typeof(AnimalService), registeredA.ImplementationType);
-            Assert.NotNull(registeredA.InstanceFactory);
-
-            var registeredB = namedRegistrations["B"];
-
-            Assert.NotNull(registeredB);
-            Assert.Equal(ServiceLifetime.Transient, registeredB.Lifetime);
-            Assert.False(registeredB.RegistrationOwnsInstance);
-            Assert.Equal(typeof(BearService), registeredB.ImplementationType);
-            Assert.NotNull(registeredB.InstanceFactory);
         }
 
         [Fact]
@@ -207,22 +188,17 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
             namedRegistrations.AddTransient("A", (sp) => new AnimalService());
             namedRegistrations.AddTransient("B", (sp) => new BearService());
+            namedRegistrations.Add(ServiceLifetime.Transient, "C", (sp) => new AnimalService());
+            namedRegistrations.Add<BearService>(ServiceLifetime.Transient, "D", (sp) => new BearService());
+            namedRegistrations.Add(ServiceLifetime.Transient, (sp) => new AnimalService());
 
-            var registeredA = namedRegistrations["A"];
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Transient, namedRegistrations["A"], true);
+            AssertRegistration<AnimalService, BearService>(ServiceLifetime.Transient, namedRegistrations["B"], true);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Transient, namedRegistrations["C"], true);
+            AssertRegistration<AnimalService, BearService>(ServiceLifetime.Transient, namedRegistrations["D"], true);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Transient, namedRegistrations[""], true);
 
-            Assert.NotNull(registeredA);
-            Assert.Equal(ServiceLifetime.Transient, registeredA.Lifetime);
-            Assert.False(registeredA.RegistrationOwnsInstance);
-            Assert.Null(registeredA.ImplementationType);
-            Assert.NotNull(registeredA.InstanceFactory);
 
-            var registeredB = namedRegistrations["B"];
-
-            Assert.NotNull(registeredB);
-            Assert.Equal(ServiceLifetime.Transient, registeredB.Lifetime);
-            Assert.False(registeredB.RegistrationOwnsInstance);
-            Assert.Null(registeredB.ImplementationType);
-            Assert.NotNull(registeredB.InstanceFactory);
         }
 
         #endregion
@@ -235,22 +211,15 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
             namedRegistrations.AddScoped("A");
             namedRegistrations.AddScoped<BearService>("B");
+            namedRegistrations.Add(ServiceLifetime.Scoped, "C");
+            namedRegistrations.Add<BearService>(ServiceLifetime.Scoped, "D");
+            namedRegistrations.Add(ServiceLifetime.Scoped);
 
-            var registeredA = namedRegistrations["A"];
-
-            Assert.NotNull(registeredA);
-            Assert.Equal(ServiceLifetime.Scoped, registeredA.Lifetime);
-            Assert.False(registeredA.RegistrationOwnsInstance);
-            Assert.Equal(typeof(AnimalService), registeredA.ImplementationType);
-            Assert.NotNull(registeredA.InstanceFactory);
-
-            var registeredB = namedRegistrations["B"];
-
-            Assert.NotNull(registeredB);
-            Assert.Equal(ServiceLifetime.Scoped, registeredB.Lifetime);
-            Assert.False(registeredB.RegistrationOwnsInstance);
-            Assert.Equal(typeof(BearService), registeredB.ImplementationType);
-            Assert.NotNull(registeredB.InstanceFactory);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Scoped, namedRegistrations["A"]);
+            AssertRegistration<AnimalService, BearService>(ServiceLifetime.Scoped, namedRegistrations["B"]);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Scoped, namedRegistrations["C"]);
+            AssertRegistration<AnimalService, BearService>(ServiceLifetime.Scoped, namedRegistrations["D"]);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Scoped, namedRegistrations[""]);
         }
 
         [Fact]
@@ -259,25 +228,67 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
             namedRegistrations.AddScoped("A", sp => new AnimalService());
             namedRegistrations.AddScoped("B", sp => new BearService());
+            namedRegistrations.Add(ServiceLifetime.Scoped, "C", (sp) => new AnimalService());
+            namedRegistrations.Add<BearService>(ServiceLifetime.Scoped, "D", (sp) => new BearService());
+            namedRegistrations.Add(ServiceLifetime.Scoped, (sp) => new AnimalService());
 
-            var registeredA = namedRegistrations["A"];
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Scoped, namedRegistrations["A"], true);
+            AssertRegistration<AnimalService, BearService>(ServiceLifetime.Scoped, namedRegistrations["B"], true);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Scoped, namedRegistrations["C"], true);
+            AssertRegistration<AnimalService, BearService>(ServiceLifetime.Scoped, namedRegistrations["D"], true);
+            AssertRegistration<AnimalService, AnimalService>(ServiceLifetime.Scoped, namedRegistrations[""], true);
 
-            Assert.NotNull(registeredA);
-            Assert.Equal(ServiceLifetime.Scoped, registeredA.Lifetime);
-            Assert.False(registeredA.RegistrationOwnsInstance);
-            Assert.Null(registeredA.ImplementationType);
-            Assert.NotNull(registeredA.InstanceFactory);
-
-            var registeredB = namedRegistrations["B"];
-
-            Assert.NotNull(registeredB);
-            Assert.Equal(ServiceLifetime.Scoped, registeredB.Lifetime);
-            Assert.False(registeredB.RegistrationOwnsInstance);
-            Assert.Null(registeredB.ImplementationType);
-            Assert.NotNull(registeredB.InstanceFactory);
         }
 
         #endregion
+
+        private void AssertRegistration<TService, TImplementationType>(ServiceLifetime lifetime, NamedServiceRegistration<TService> registration, bool hasFactoryFunc = false)
+        {
+            Assert.NotNull(registration);
+            Assert.Equal(lifetime, registration.Lifetime);
+
+            var shouldRegistrationOwnInstance = lifetime == ServiceLifetime.Singleton;
+            Assert.Equal(shouldRegistrationOwnInstance, registration.RegistrationOwnsInstance);
+
+            if (hasFactoryFunc)
+            {
+                Assert.Null(registration.ImplementationType);
+            }
+            else
+            {
+                Assert.Equal(typeof(TImplementationType), registration.ImplementationType);
+            }
+            Assert.NotNull(registration.InstanceFactory);
+        }
+
+        [Fact]
+        public void Cannot_Add_Duplicate_Keys()
+        {
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>(GetDefaultServiceProvider());
+            namedRegistrations.AddTransient("");
+            AssertThrowsDuplicateKey(namedRegistrations, "");
+
+            namedRegistrations.AddScoped("FOO");
+            AssertThrowsDuplicateKey(namedRegistrations, "FOO");
+
+            namedRegistrations.AddSingleton("BAR");
+            AssertThrowsDuplicateKey(namedRegistrations, "BAR");
+        }
+
+        private void AssertThrowsDuplicateKey(NamedServiceRegistry<AnimalService> namedRegistrations, string key)
+        {
+            Assert.Throws<ArgumentException>(() => namedRegistrations.AddTransient(key));
+            Assert.Throws<ArgumentException>(() => namedRegistrations.AddTransient(key, (sp) => new AnimalService()));
+            Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Transient));
+
+            Assert.Throws<ArgumentException>(() => namedRegistrations.AddScoped(key));
+            Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Scoped));
+            Assert.Throws<ArgumentException>(() => namedRegistrations.AddScoped(key, (sp) => new AnimalService()));
+
+            Assert.Throws<ArgumentException>(() => namedRegistrations.AddSingleton(key));
+            Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Singleton));
+            Assert.Throws<ArgumentException>(() => namedRegistrations.AddSingleton(key, (sp) => new AnimalService()));
+        }
 
         private IServiceProvider GetDefaultServiceProvider()
         {

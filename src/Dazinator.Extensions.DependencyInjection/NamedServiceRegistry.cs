@@ -22,6 +22,9 @@ namespace Dazinator.Extensions.DependencyInjection
         public NamedServiceRegistration<TService> this[string name] => GetRegistration(name);
 
         #region Add
+        public void Add<TImplementationType>(ServiceLifetime lifetime = ServiceLifetime.Transient, Func<IServiceProvider, TImplementationType> factoryFunc = null)
+    where TImplementationType : TService => Add<TImplementationType>(lifetime, string.Empty, factoryFunc);
+
         public void Add<TImplementationType>(ServiceLifetime lifetime = ServiceLifetime.Transient, string name = "", Func<IServiceProvider, TImplementationType> factoryFunc = null)
             where TImplementationType : TService
         {
@@ -54,7 +57,7 @@ namespace Dazinator.Extensions.DependencyInjection
                     }
                     else
                     {
-                        AddSingleton(name, factoryFunc);
+                        AddTransient(name, factoryFunc);
                     }
                     break;
             }
@@ -91,7 +94,7 @@ namespace Dazinator.Extensions.DependencyInjection
                     }
                     else
                     {
-                        AddSingleton(name, factoryFunc);
+                        AddTransient(name, factoryFunc);
                     }
                     break;
             }
