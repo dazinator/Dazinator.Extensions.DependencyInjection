@@ -326,7 +326,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
                 Assert.Throws<ArgumentException>(() => namedRegistrations.AddTransient<BearService>((sp) => new BearService()));
 
                 Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Transient));
-                Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Transient, sp=>new AnimalService()));
+                Assert.Throws<ArgumentException>(() => namedRegistrations.Add(ServiceLifetime.Transient, sp => new AnimalService()));
                 Assert.Throws<ArgumentException>(() => namedRegistrations.Add<BearService>(ServiceLifetime.Transient));
                 Assert.Throws<ArgumentException>(() => namedRegistrations.Add<BearService>(ServiceLifetime.Transient, sp => new BearService()));
 

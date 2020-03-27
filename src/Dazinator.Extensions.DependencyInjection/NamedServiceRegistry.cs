@@ -141,7 +141,7 @@ where TConcreteType : TService => AddSingleton<TConcreteType>(string.Empty);
 
         private IServiceProvider GetServiceProvider()
         {
-            if(ServiceProvider == null)
+            if (ServiceProvider == null)
             {
                 throw new InvalidOperationException("Service provider is null");
             }
