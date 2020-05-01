@@ -7,7 +7,7 @@ namespace Dazinator.Extensions.DependencyInjection
     {
         public static IServiceCollection AddNamed<TService>(this IServiceCollection services, Action<NamedServiceRegistry<TService>> configure)
         {
-            var registry = new NamedServiceRegistry<TService>();
+            var registry = new NamedServiceRegistry<TService>(services);
             configure(registry);
 
             //var registry = new NamedServiceRegistry<TService>(()=> {

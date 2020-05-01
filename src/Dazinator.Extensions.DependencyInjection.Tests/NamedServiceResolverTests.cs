@@ -78,6 +78,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
                     Interlocked.Increment(ref factoryFuncInvokeCount);
                     return new BearService();
                 });
+                names.AddSingleton(new BearService()); //nameless
             });
 
             var sp = services.BuildServiceProvider();
@@ -88,25 +89,54 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             Assert.NotSame(resolver["A"], resolver["C"]);
             Assert.NotSame(resolver["A"], resolver["D"]);
             Assert.NotSame(resolver["A"], resolver["E"]);
+            Assert.NotSame(resolver["A"], resolver[string.Empty]);
 
             Assert.NotSame(resolver["B"], resolver["C"]);
             Assert.NotSame(resolver["B"], resolver["D"]);
             Assert.NotSame(resolver["B"], resolver["E"]);
+            Assert.NotSame(resolver["B"], resolver[string.Empty]);
 
             Assert.NotSame(resolver["C"], resolver["D"]);
             Assert.NotSame(resolver["C"], resolver["E"]);
+            Assert.NotSame(resolver["C"], resolver[string.Empty]);
 
             Assert.NotSame(resolver["D"], resolver["E"]);
+            Assert.NotSame(resolver["D"], resolver[string.Empty]);
 
+            Assert.NotSame(resolver["E"], resolver[string.Empty]);
 
             Assert.Same(resolver["A"], resolver["A"]);
             Assert.Same(resolver["B"], resolver["B"]);
             Assert.Same(resolver["C"], resolver["C"]);
             Assert.Same(resolver["D"], resolver["D"]);
             Assert.Same(resolver["E"], resolver["E"]);
+            Assert.Same(resolver[string.Empty], resolver[string.Empty]);
 
             Assert.Equal(1, factoryFuncInvokeCount);
+
+            // nameless registration can also be directly resolved by ordinary sp.
+            Assert.Same(resolver[string.Empty], sp.GetRequiredService<AnimalService>());
         }
+
+        [Fact]
+        public void Can_Resolve_Nameless_Singleton_Using_StringEmptyName()
+        {
+            var services = new ServiceCollection();
+            var instance = new LionService();
+            // we are registering a service, but without a name! This will promote it to an ordinary registration in the ServiceCollection
+            // so that we can inject it normally, but it will also allow us to resolve it as a named service with an empty string.
+            services.AddNamed<AnimalService>(names => names.AddSingleton(instance));
+
+            var sp = services.BuildServiceProvider();
+            var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
+
+            var singletonInstanceA = resolver[string.Empty];
+            Assert.IsType<LionService>(singletonInstanceA);
+            Assert.Same(instance, singletonInstanceA);
+
+            Assert.Same(singletonInstanceA, sp.GetRequiredService<AnimalService>());
+        }
+
 
         #endregion
 
@@ -166,6 +196,26 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
 
             Assert.NotSame(instanceA, resolver["A"]);
             Assert.NotSame(instanceB, resolver["B"]);
+        }
+
+        [Fact]
+        public void Can_Resolve_Nameless_Transient()
+        {
+            var services = new ServiceCollection();
+            // we are registering a service, but without a name! This will promote it to an ordinary registration in the ServiceCollection
+            // so that we can inject it normally, but it will also allow us to resolve it as a named service with an empty string.
+            services.AddNamed<AnimalService>(names => names.AddTransient((sp) => new LionService()));
+
+            var sp = services.BuildServiceProvider();
+            var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
+
+            var instanceA = resolver[string.Empty];
+            Assert.IsType<LionService>(instanceA);
+
+            var instanceB = sp.GetRequiredService<AnimalService>();
+            Assert.IsType<LionService>(instanceB);
+
+            Assert.NotSame(instanceA, instanceB);
         }
 
         #endregion
@@ -290,6 +340,27 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
 
             sp.Dispose();
             Assert.True(checkDisposed.WasDisposed);
+        }
+
+
+        [Fact]
+        public void Can_Resolve_Nameless_Scoped()
+        {
+            var services = new ServiceCollection();
+            // we are registering a service, but without a name! This will promote it to an ordinary registration in the ServiceCollection
+            // so that we can inject it normally, but it will also allow us to resolve it as a named service with an empty string.
+            services.AddNamed<AnimalService>(names => names.AddScoped((sp) => new LionService()));
+
+            var sp = services.BuildServiceProvider();
+            var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
+
+            var instanceA = resolver[string.Empty];
+            Assert.IsType<LionService>(instanceA);
+
+            var instanceB = sp.GetRequiredService<AnimalService>();
+            Assert.IsType<LionService>(instanceB);
+
+            Assert.Same(instanceA, instanceB);
         }
 
         #endregion

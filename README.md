@@ -46,15 +46,16 @@ public MyController(Func<string, AnimalService> namedServices)
    AnimalService serviceB = namedServices("B"); // BearService derives from AnimalService
 }
 
+```
+
 or
 
+```csharp
 public MyController(NamedServiceResolver<AnimalService> namedServices)
 {
    AnimalService serviceA = namedServices["A"];
    AnimalService serviceB = namedServices["B"]; // instance of BearService returned derives from AnimalService
 }
-
-
 
 ```
 
@@ -120,3 +121,53 @@ Named scoped services behave as you would expect - i.e each resolution of the sa
 ### Disposal
 
 All instances of named scoped services that implement `IDisposable` will automatically be disposed for you, when the current scope is disposed.
+
+
+## Nameless Registrations 
+
+Whilst registering named services, there are overloads so that you can also register a named service **without specifying any name** which may seem counter intuitive at first.
+These overloads do the equivalent of using `string.Empty` for the name - so you can only do it once otherwise you'll get a duplicate key exception.
+
+For example: :
+
+```csharp
+    
+    services.AddNamed<AnimalService>(names =>
+    {
+        names.AddSingleton();
+        names.AddSingleton(""); // this would throw, you must now register any additional variations of this service with a unique name (something other than string.Empty in this case).
+    }
+
+```
+
+Why would you do this? 
+When you register a named service without a name:
+
+1. The registration is special. The registration is promoted up into the `IServiceCollection` - which means you can now use ordinary DI to inject that `TService` as normal - i.e without any name.
+2. In addition to the above, you can also still inject and resolve that service as if it were also a named service, just using `string.Empty` as the name.
+
+This hopefully demontrates the above behaviour a bit more:
+
+
+```csharp
+
+    services.AddNamed<AnimalService>(names =>
+    {
+        names.AddSingleton();
+        names.AddSingleton("A");
+    }
+
+    // and..
+
+    /// AnimalService 
+    public MyController(AnimalService defaultService, NamedServiceResolver<AnimalService> namedServices)
+    {
+       // defaultService has been injected by ordinary DI it correlates with the `nameless registration` we made.
+       // However it can also be resolved using namedServices with an empty string as it's name.
+       Assert.Same(defaultService, namedServices[string.Empty]);
+    }
+
+
+```
+
+The main reason for this feature was just so that there is one place to register all the variations of your service, and you don't have to switch between registering on the IServiceCollection seperately - so it's a convenience, in part.

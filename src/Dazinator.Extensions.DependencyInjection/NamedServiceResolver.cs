@@ -23,22 +23,26 @@ namespace Dazinator.Extensions.DependencyInjection
         public TService Get(string name)
         {
             // optimised more for transients and singletons - we don't need to cache instances per scope
-            // for those, so we only bother to check in scope cache for an instance once we know we are not dealing with
+            // for those, so we only bother to check in scope cache for an instance once we know we dealing with
             // a scoped registration. We coud change this and optimise for scoped registrations, by checking this cache for an instance first,
             // but then that would be a needless lookup (and needlessly initialising the lazy cache instance)
-            // in the cases that the registration is singleton or transient.
+            // in the cases that the registration is singleton or transient.           
+
             var item = Registry.GetRegistration(name);
             if (item == null)
             {
                 throw new KeyNotFoundException(name);
             }
-            if (item.Lifetime != ServiceLifetime.Scoped)
+            // A scoped service flagged with RegistrationOwnsInstance means owner - we don't track it here.
+            // Because of that we can just return an instance without adding it to the tracking list (_scopedInstanceCache) 
+            if ((item.Lifetime != ServiceLifetime.Scoped) || !item.TrackScopedLifetime)
             {
                 var result = item.InstanceFactory(_serviceProvider);
                 return result;
             }
 
-            // scoped instances, we must get or add to scope cache.
+            // scoped instances,  of which nothing else is managing their lifetime, we must get or add to scope cache.
+            // see https://github.com/dazinator/Dazinator.Extensions.DependencyInjection/issues/4          
             return _scopedInstanceCache.Value.GetOrAdd(name, () => item.InstanceFactory(_serviceProvider));
         }
 
