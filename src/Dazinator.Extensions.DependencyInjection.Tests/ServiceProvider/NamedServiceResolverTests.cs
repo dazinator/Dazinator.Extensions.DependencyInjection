@@ -279,6 +279,29 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ServiceProvider
         }
 
         [Fact]
+        public void Can_Resolve_Scoped_Type_With_Dependency()
+        {
+            var services = new ServiceCollection();
+
+            services.AddScoped<Claws>();
+            services.AddNamed<AnimalService>(names =>
+            {
+                names.AddScoped<BearServiceWithDependency>("B");
+            });
+
+            var sp = services.BuildServiceProvider();
+            using(var scope = sp.CreateScope())
+            {
+                var resolver = scope.ServiceProvider.GetRequiredService<NamedServiceResolver<AnimalService>>();
+                var instanceB = resolver["B"];
+
+                Assert.IsType<BearServiceWithDependency>(instanceB);
+                Assert.NotNull(((BearServiceWithDependency)instanceB).Dependency);
+
+            }
+        }
+
+        [Fact]
         public void Can_Resolve_Scoped_WithFactoryFunc()
         {
             var services = new ServiceCollection();
@@ -408,4 +431,22 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ServiceProvider
     {
 
     }
+
+    public class BearServiceWithDependency : AnimalService
+    {
+        private readonly Claws _dependency;
+
+        public BearServiceWithDependency(Claws dependency)
+        {
+            Dependency = dependency;
+        }
+        public Claws Dependency { get; set; }
+    }
+
+    public class Claws
+    {
+
+    }
+
+
 }

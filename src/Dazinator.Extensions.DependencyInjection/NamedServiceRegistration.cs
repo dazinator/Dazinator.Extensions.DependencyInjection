@@ -47,7 +47,7 @@ namespace Dazinator.Extensions.DependencyInjection
                 TrackScopedLifetime = (lifetime == ServiceLifetime.Scoped);
                 // Perf: we do care about speed of creating transient or scoped instances as it could
                 // happen many times during the lifetime of the application. So we use ObjectFactory here.
-                var factory = ImplementationType.CreateObjectFactory();
+                var factory = ActivatorUtilities.CreateFactory(ImplementationType, Array.Empty<Type>());
                 InstanceFactory = (sp) => (TService)factory(sp, null);
             }
 
