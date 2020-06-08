@@ -1,7 +1,7 @@
 namespace Dazinator.Extensions.DependencyInjection
 {
-    using Microsoft.Extensions.DependencyInjection;
     using System;
+    using Microsoft.Extensions.DependencyInjection;
 
     public static class ServiceCollectionExtensions
     {

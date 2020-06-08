@@ -290,7 +290,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ServiceProvider
             });
 
             var sp = services.BuildServiceProvider();
-            using(var scope = sp.CreateScope())
+            using (var scope = sp.CreateScope())
             {
                 var resolver = scope.ServiceProvider.GetRequiredService<NamedServiceResolver<AnimalService>>();
                 var instanceB = resolver["B"];
@@ -402,8 +402,8 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ServiceProvider
                 names.AddScoped<SquareService>("B");
             });
 
-            var sp = services.BuildServiceProvider();           
-          
+            var sp = services.BuildServiceProvider();
+
             using (var newScope = sp.CreateScope())
             {
                 var animalResolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
@@ -414,7 +414,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ServiceProvider
 
                 Assert.NotNull(animal);
                 Assert.NotNull(shape);
-            }          
+            }
         }
 
 

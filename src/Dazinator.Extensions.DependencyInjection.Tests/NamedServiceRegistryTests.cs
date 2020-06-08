@@ -1,11 +1,11 @@
 namespace Dazinator.Extensions.DependencyInjection.Tests
 {
-    using Dazinator.Extensions.DependencyInjection;
-    using Microsoft.Extensions.DependencyInjection;
     using System;
     using System.Linq;
     using System.Reflection.Metadata.Ecma335;
     using System.Security.Cryptography;
+    using Dazinator.Extensions.DependencyInjection;
+    using Microsoft.Extensions.DependencyInjection;
     using Xunit;
 
     public class NamedServiceRegistryTests
@@ -620,5 +620,5 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
         }
     }
 
-   
+
 }
