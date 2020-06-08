@@ -1,8 +1,9 @@
-namespace Dazinator.Extensions.DependencyInjection.Tests
+namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
 {
-    using System.Dynamic;
     using System.Threading;
     using Dazinator.Extensions.DependencyInjection;
+    using global::Autofac;
+    using global::Autofac.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection;
     using Xunit;
 
@@ -17,7 +18,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             var instance = new LionService();
             services.AddNamed<AnimalService>(names => names.AddSingleton("A", instance));
 
-            var sp = services.BuildServiceProvider();
+            var sp = BuildServiceProvider(services);
 
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
@@ -27,13 +28,22 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
 
         }
 
+        private AutofacServiceProvider BuildServiceProvider(ServiceCollection services)
+        {
+            var containerBuilder = new ContainerBuilder();
+            containerBuilder.Populate(services);
+            var container = containerBuilder.Build();
+            var sp = new AutofacServiceProvider(container);
+            return sp;
+        }
+
         [Fact]
         public void Can_Resolve_Singleton_Type()
         {
             var services = new ServiceCollection();
             services.AddNamed<AnimalService>(names => names.AddSingleton<BearService>("A"));
 
-            var sp = services.BuildServiceProvider();
+            var sp = BuildServiceProvider(services);
 
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
@@ -53,7 +63,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
                 return new BearService();
             }));
 
-            var sp = services.BuildServiceProvider();
+            var sp = BuildServiceProvider(services);
 
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
@@ -81,7 +91,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
                 names.AddSingleton(new BearService()); //nameless
             });
 
-            var sp = services.BuildServiceProvider();
+            var sp = BuildServiceProvider(services);
 
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
@@ -127,7 +137,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             // so that we can inject it normally, but it will also allow us to resolve it as a named service with an empty string.
             services.AddNamed<AnimalService>(names => names.AddSingleton(instance));
 
-            var sp = services.BuildServiceProvider();
+            var sp = BuildServiceProvider(services);
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var singletonInstanceA = resolver[string.Empty];
@@ -152,7 +162,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
                 names.AddTransient<LionService>("B");
             });
 
-            var sp = services.BuildServiceProvider();
+            var sp = BuildServiceProvider(services);
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var instanceA = resolver["A"];
@@ -184,7 +194,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
                 });
             });
 
-            var sp = services.BuildServiceProvider();
+            var sp = BuildServiceProvider(services);
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var instanceA = resolver["A"];
@@ -206,7 +216,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             // so that we can inject it normally, but it will also allow us to resolve it as a named service with an empty string.
             services.AddNamed<AnimalService>(names => names.AddTransient((sp) => new LionService()));
 
-            var sp = services.BuildServiceProvider();
+            var sp = BuildServiceProvider(services);
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var instanceA = resolver[string.Empty];
@@ -233,7 +243,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
                 names.AddScoped<DisposableTigerService>("B");
             });
 
-            var sp = services.BuildServiceProvider();
+            var sp = BuildServiceProvider(services);
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var instanceA = resolver["A"];
@@ -297,7 +307,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
                 });
             });
 
-            var sp = services.BuildServiceProvider();
+            var sp = BuildServiceProvider(services);
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var instanceA = resolver["A"];
@@ -351,7 +361,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             // so that we can inject it normally, but it will also allow us to resolve it as a named service with an empty string.
             services.AddNamed<AnimalService>(names => names.AddScoped((sp) => new LionService()));
 
-            var sp = services.BuildServiceProvider();
+            var sp = BuildServiceProvider(services);
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var instanceA = resolver[string.Empty];
@@ -363,7 +373,49 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
             Assert.Same(instanceA, instanceB);
         }
 
+        [Fact]
+        public void Can_Resolve_Different_Scoped_Types()
+        {
+            var services = new ServiceCollection();
+
+            services.AddNamed<AnimalService>(names =>
+            {
+                names.AddScoped("A");
+                names.AddScoped<DisposableTigerService>("B");
+            });
+
+            services.AddNamed<IShapeService>(names =>
+            {
+                names.AddScoped<SquareService>("B");
+            });
+
+            var sp = BuildServiceProvider(services);
+
+            using (var newScope = sp.CreateScope())
+            {
+                var animalResolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
+                var shapeResolver = sp.GetRequiredService<NamedServiceResolver<IShapeService>>();
+
+                var animal = animalResolver["A"];
+                var shape = shapeResolver["B"];
+
+                Assert.NotNull(animal);
+                Assert.NotNull(shape);
+            }
+        }
+
+
         #endregion
+
+    }
+
+    public interface IShapeService
+    {
+
+    }
+
+    public class SquareService : IShapeService
+    {
 
     }
 }
