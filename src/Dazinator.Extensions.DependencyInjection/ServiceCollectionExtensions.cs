@@ -39,4 +39,5 @@ namespace Dazinator.Extensions.DependencyInjection
             return services;
         }
     }
+
 }

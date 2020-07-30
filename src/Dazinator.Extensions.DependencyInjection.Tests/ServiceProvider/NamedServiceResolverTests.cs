@@ -1,6 +1,8 @@
 namespace Dazinator.Extensions.DependencyInjection.Tests.ServiceProvider
 {
+    using System;
     using System.Dynamic;
+    using System.Net.Http.Headers;
     using System.Threading;
     using Dazinator.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection;
@@ -316,8 +318,13 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ServiceProvider
                 {
                     var instance = new DisposableTigerService();
                     return instance;
-
                 });
+
+                //names.AddScoped("C", sp =>
+                //{
+                //    return new BearServiceWithDependency())
+                //});
+
             });
 
             var sp = services.BuildServiceProvider();
@@ -417,6 +424,48 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ServiceProvider
             }
         }
 
+        [Fact]
+        public void Can_Use_Named_FactoryFunc()
+        {
+            var services = new ServiceCollection();
+            services.AddNamed<Claws>(names =>
+            {
+                names.AddScoped("D");
+            });
+
+            services.AddNamed<AnimalService>(names =>
+            {
+                // Animal Service named "A" gets wired up with Claws named "D".
+                names.AddScoped("B", sp => new BearServiceWithFuncDependency(sp.GetNamedFunc<Claws>("D")));
+            });
+
+            // Service registered in normal way, gets wired up with Claws named "D".
+            services.AddScoped(sp => new BearServiceWithDependency(sp.GetNamed<Claws>("D")));          
+
+            var sp = services.BuildServiceProvider();
+
+            using (var newScope = sp.CreateScope())
+            {
+                var animalResolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
+                var clawsResolver = sp.GetRequiredService<NamedServiceResolver<Claws>>();
+
+                var animal = animalResolver["B"];
+                var claws = clawsResolver["D"];
+
+                var notNamedBear = sp.GetRequiredService<BearServiceWithDependency>();
+
+                Assert.NotNull(animal);
+                Assert.NotNull(claws);
+                Assert.NotNull(notNamedBear);
+
+                Assert.IsType<BearServiceWithFuncDependency>(animal);
+                var bear = (BearServiceWithFuncDependency)animal;
+
+                Assert.Same(bear.Dependency, claws);
+                Assert.Same(notNamedBear.Dependency, claws);
+            }
+        }
+
 
         #endregion
 
@@ -446,6 +495,15 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ServiceProvider
     public class Claws
     {
 
+    }
+
+    public class BearServiceWithFuncDependency : AnimalService
+    {
+        public BearServiceWithFuncDependency(Func<Claws> factory)
+        {
+            Dependency = factory();
+        }
+        public Claws Dependency { get; set; }
     }
 
 

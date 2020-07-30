@@ -59,6 +59,31 @@ public MyController(NamedServiceResolver<AnimalService> namedServices)
 
 ```
 
+Note: There is also an alternative way in which you might wire up your services to avoid having to "request" a service by name within the classes themselves:
+
+```csharp
+    var services = new ServiceCollection();
+    // register your named variations / flavours of some dependency:
+    services.AddNamed<Claws>(names =>
+    {
+        names.AddTransient("D");
+        names.AddScoped("E", (sp)=>new SharpClaws());
+    });
+
+    // register your dependent services, and pass into them the named variation of the dependency that they need, explicitly.   
+    services.AddTransient<Bear>(sp=>new LazyBear(sp.GetNamed<Claws>("D")));
+    services.AddTransient<Bear>(sp=>new HungryBear(sp.GetNamed<Claws>("E")));
+
+    // later.. 
+    var bears == sp.GetRequiredService<IEnumerable<Bear>>();
+    // bears contains 1x bear with `Claws` and 1x bear with `SharpClaws` (Claws are Transient, where as SharpClaws are Scoped)
+
+```
+
+Note: You should be careful regarding the following:
+
+- You don't want to allow services registered as singleton services, to be handed dependencies registered as Scoped().
+
 ## Singletons
 
 When you register named singletons, they are Singleton PER NAMED registration.
