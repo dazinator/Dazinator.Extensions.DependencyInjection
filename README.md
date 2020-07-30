@@ -34,9 +34,13 @@ Allows you to register services that can be resolved by name.
 
 ```
 
-You can then inject  `Func<string, AnimalService>` or `NamedServiceResolver<AnimalService>` (depends if you don't mind your services having a dependency on this library or not).
+You can then do any of the following to obtain a named instance of a service:
 
-Get services by name like this:
+- inject `Func<string, AnimalService>` and invoke it to obtain a named instance.
+- inject `NamedServiceResolver<AnimalService>` and invoke it to obtain a named instance. (if you don't mind your services having a dependency on this library).
+- if using `IServiceProvider` directly, use `sp.GetNamed<AnimalService>("A")` to obtain a named instance.
+
+For example:
 
 ```csharp
 
@@ -59,7 +63,8 @@ public MyController(NamedServiceResolver<AnimalService> namedServices)
 
 ```
 
-Note: There is also an alternative way in which you might wire up your services to avoid having to "request" a service by name within the classes themselves:
+Note: Depending upon your case, you can also use the following technique when registering services, to wire them up with certain named dependencies,
+to avoid the sort of code above where classes are having to "request" (locate) a service with a specific name - keeping them oblivious to the fact that they are using "named" dependencies at all:
 
 ```csharp
     var services = new ServiceCollection();
@@ -70,19 +75,19 @@ Note: There is also an alternative way in which you might wire up your services 
         names.AddScoped("E", (sp)=>new SharpClaws());
     });
 
-    // register your dependent services, and pass into them the named variation of the dependency that they need, explicitly.   
+    // register your services, and wire them up with the named variation of the dependency that they need, explicitly.   
     services.AddTransient<Bear>(sp=>new LazyBear(sp.GetNamed<Claws>("D")));
     services.AddTransient<Bear>(sp=>new HungryBear(sp.GetNamed<Claws>("E")));
 
     // later.. 
     var bears == sp.GetRequiredService<IEnumerable<Bear>>();
-    // bears contains 1x bear with `Claws` and 1x bear with `SharpClaws` (Claws are Transient, where as SharpClaws are Scoped)
+    // bears contains 1x LazyBear with `Claws` and 1x HungryBear with `SharpClaws` (Claws are Transiently created, where as SharpClaws are Scoped)
 
 ```
 
-Note: You should be careful regarding the following:
+Note: You should be careful though, regarding the following:
 
-- You don't want to allow services registered as singleton services, to be handed dependencies registered as Scoped().
+- You don't want to allow services that are registered as `singleton`, to be handed dependencies that are registered as `scoped`.
 
 ## Singletons
 
