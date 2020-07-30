@@ -1,4 +1,4 @@
-﻿namespace Dazinator.Extensions.DependencyInjection
+namespace Dazinator.Extensions.DependencyInjection
 {
     using System;
     using Microsoft.Extensions.DependencyInjection;

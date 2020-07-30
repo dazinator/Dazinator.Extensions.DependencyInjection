@@ -440,7 +440,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ServiceProvider
             });
 
             // Service registered in normal way, gets wired up with Claws named "D".
-            services.AddScoped(sp => new BearServiceWithDependency(sp.GetNamed<Claws>("D")));          
+            services.AddScoped(sp => new BearServiceWithDependency(sp.GetNamed<Claws>("D")));
 
             var sp = services.BuildServiceProvider();
 
