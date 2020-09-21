@@ -1,4 +1,4 @@
-namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
+namespace Dazinator.Extensions.DependencyInjection.Tests.Named.Autofac
 {
     using System.Threading;
     using Dazinator.Extensions.DependencyInjection;

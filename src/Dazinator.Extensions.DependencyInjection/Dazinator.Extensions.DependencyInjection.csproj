@@ -7,22 +7,21 @@
 
   <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.2" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
   </ItemGroup>
   
   <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.1.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='netstandard1.3'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="1.0.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />    
     <!--<PackageReference Include="System.Collections.Concurrent">
       <Version>4.3.0</Version>
     </PackageReference>-->
     
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Child\" />
   </ItemGroup>
 
 </Project>

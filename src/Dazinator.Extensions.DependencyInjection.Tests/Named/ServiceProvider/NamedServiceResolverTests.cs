@@ -1,8 +1,6 @@
-namespace Dazinator.Extensions.DependencyInjection.Tests.ServiceProvider
+namespace Dazinator.Extensions.DependencyInjection.Tests.Named.ServiceProvider
 {
     using System;
-    using System.Dynamic;
-    using System.Net.Http.Headers;
     using System.Threading;
     using Dazinator.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection;

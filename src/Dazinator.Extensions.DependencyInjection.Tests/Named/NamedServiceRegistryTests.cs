@@ -1,4 +1,4 @@
-namespace Dazinator.Extensions.DependencyInjection.Tests
+namespace Dazinator.Extensions.DependencyInjection.Tests.Named
 {
     using System;
     using System.Linq;
