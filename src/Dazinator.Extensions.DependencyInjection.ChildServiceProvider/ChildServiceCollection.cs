@@ -1,4 +1,4 @@
-namespace Dazinator.Extensions.DependencyInjection.Child
+namespace Dazinator.Extensions.DependencyInjection.ChildServiceProvider
 {
     using System;
     using System.Collections;
@@ -149,5 +149,7 @@ namespace Dazinator.Extensions.DependencyInjection.Child
         }
 
         public IEnumerable<ServiceDescriptor> ChildDescriptors => _descriptors;
+        public IEnumerable<ServiceDescriptor> ParentDescriptors => Parent;
+
     }
 }

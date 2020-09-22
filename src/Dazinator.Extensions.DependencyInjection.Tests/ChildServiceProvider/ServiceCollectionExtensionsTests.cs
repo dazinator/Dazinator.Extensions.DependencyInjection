@@ -8,9 +8,11 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
         [Fact]
         public void CreateChildServiceCollection()
         {
-            var parentServiceCollection = new ServiceCollection();    
+            var parentServiceCollection = new ServiceCollection();
             var childServiceCollection = parentServiceCollection.CreateChildServiceCollection();
             Assert.NotNull(childServiceCollection);
-        }       
-    } 
+        }
+
+
+    }
 }

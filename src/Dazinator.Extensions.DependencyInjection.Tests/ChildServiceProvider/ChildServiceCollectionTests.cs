@@ -1,14 +1,13 @@
 namespace Dazinator.Extensions.DependencyInjection.Tests.Child
 {
     using System;
-    using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Linq;
-    using Dazinator.Extensions.DependencyInjection.Child;
+    using Dazinator.Extensions.DependencyInjection.ChildServiceProvider;
     using Microsoft.Extensions.DependencyInjection;
     using Xunit;
 
-    public class ChildServiceCollectionApiTests
+    public class ChildServiceCollectionTests
     {
 
         [Fact]

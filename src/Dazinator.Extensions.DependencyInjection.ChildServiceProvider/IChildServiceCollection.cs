@@ -1,5 +1,6 @@
-namespace Dazinator.Extensions.DependencyInjection.Child
+namespace Dazinator.Extensions.DependencyInjection.ChildServiceProvider
 {
+    using System.Collections.Generic;
     using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
@@ -7,7 +8,8 @@ namespace Dazinator.Extensions.DependencyInjection.Child
     /// </summary>
     public interface IChildServiceCollection : IServiceCollection
     {
-
+        IEnumerable<ServiceDescriptor> ChildDescriptors { get; }
+        IEnumerable<ServiceDescriptor> ParentDescriptors { get; }
     }  
 
 
