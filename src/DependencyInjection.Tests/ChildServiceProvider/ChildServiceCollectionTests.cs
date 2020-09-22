@@ -3,7 +3,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
     using System;
     using System.Collections.Immutable;
     using System.Linq;
-    using Dazinator.Extensions.DependencyInjection.ChildServiceProvider;
+    using Dazinator.Extensions.DependencyInjection.ChildContainers;
     using Microsoft.Extensions.DependencyInjection;
     using Xunit;
 

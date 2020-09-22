@@ -1,6 +1,6 @@
 namespace Dazinator.Extensions.DependencyInjection
 {
-    using Dazinator.Extensions.DependencyInjection.ChildServiceProvider;
+    using Dazinator.Extensions.DependencyInjection.ChildContainers;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection.Extensions;
     using System;

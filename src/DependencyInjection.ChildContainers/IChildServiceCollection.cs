@@ -1,4 +1,4 @@
-namespace Dazinator.Extensions.DependencyInjection.ChildServiceProvider
+namespace Dazinator.Extensions.DependencyInjection.ChildContainers
 {
     using System.Collections.Generic;
     using Microsoft.Extensions.DependencyInjection;
