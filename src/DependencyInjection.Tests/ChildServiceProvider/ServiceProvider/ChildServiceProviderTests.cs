@@ -1,8 +1,10 @@
 namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
 {
     using System;
+    using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.ComponentModel;
+    using System.Linq;
     using Dazinator.Extensions.DependencyInjection.ChildContainers;
     using Dazinator.Extensions.DependencyInjection.Tests.Child;
     using Microsoft.Extensions.DependencyInjection;
@@ -110,7 +112,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var parentServices = new ServiceCollection();
             var serviceWasDisposed = false;
 
-            var descriptor = new ServiceDescriptor(typeof(AnimalService), (sp) => new DisposableTigerService()
+            var descriptor = new ServiceDescriptor(typeof(AnimalService), (sp) => new DisposableAnimalService()
             {
                 OnDispose = () => serviceWasDisposed = true
             }, lifetime);
@@ -230,6 +232,60 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
         }
 
 
+        [Theory]
+        [Description("IEnumerable services enumerate services from both parent and child registrations")]
+        [InlineData(new[] { typeof(AnimalService) }, new Type[0])]
+        [InlineData(new Type[0], new[] { typeof(AnimalService) })]
+        [InlineData(new Type[0], new Type[0])]
+        [InlineData(new[] { typeof(AnimalService) }, new[] { typeof(LionService) })]
+        [InlineData(new[] { typeof(AnimalService), typeof(GenericAnimalService<string>) }, new[] { typeof(LionService), typeof(GenericAnimalService<bool>) })]
+        public void ParentServiceAndChildService_IEnumerableEnumeratesBoth(Type[] parentServiceTypes, Type[] childServiceTypes)
+        {
+
+            var parentServices = new ServiceCollection();
+            foreach (var parentType in parentServiceTypes)
+            {
+                parentServices.AddTransient(typeof(AnimalService), parentType);
+            }
+
+            var childServices = parentServices.CreateChildServiceCollection();
+            foreach (var childType in childServiceTypes)
+            {
+                childServices.AddTransient(typeof(AnimalService), childType);
+            }
+
+            //var parentSingletonDisposed = false;
+            //parentServices.AddSingleton<AnimalService>(sp => new DisposableAnimalService() { OnDispose = () => parentSingletonDisposed = true });
+
+            var parentServiceProvider = parentServices.BuildServiceProvider();
+            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+
+            var parentInstances = parentServiceProvider.GetServices<AnimalService>();
+            AssertIEnumerableInstances(parentServiceTypes, parentInstances);
+
+            var childInstances = childServiceProvider.GetServices<AnimalService>();
+            var expectedTypes = parentServiceTypes.Concat(childServiceTypes).ToArray();
+            AssertIEnumerableInstances(expectedTypes, childInstances);
+        }
+
+        private static void AssertIEnumerableInstances(Type[] expectedTypes, IEnumerable<AnimalService> instances)
+        {
+            Assert.NotNull(instances);
+            Assert.IsAssignableFrom<IEnumerable<AnimalService>>(instances);
+
+            var parentInstancesList = instances.ToList();
+
+            Assert.Equal(expectedTypes.Count(), parentInstancesList.Count());
+            var index = 0;
+
+            foreach (var item in expectedTypes)
+            {
+                var instance = parentInstancesList[index];
+                Assert.IsType(item, instance);
+                index += 1;
+            }
+        }
+
         #endregion
 
     }
@@ -237,6 +293,32 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
     {
         public string SomeProperty { get; set; }
     }
+
+    public class LionService : AnimalService
+    {
+
+    }
+
+    public class GenericAnimalService<TMarker> : AnimalService
+    {
+
+    }
+
+    public class DisposableAnimalService : AnimalService, IDisposable
+    {
+        public Action OnDispose { get; set; }
+        public bool WasDisposed { get; set; } = false;
+        public void Dispose()
+        {
+            WasDisposed = true;
+            OnDispose?.Invoke();
+        }
+    }
+
+    //public class GenericDisposableAnimalService<TMarker> : DisposableAnimalService, IDisposable
+    //{
+
+    //}
 
     public class LionServiceWithDependency : AnimalService
     {
@@ -288,14 +370,5 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
         }
     }
 
-    public class DisposableTigerService : AnimalService, IDisposable
-    {
-        public Action OnDispose { get; set; }
-        public bool WasDisposed { get; set; } = false;
-        public void Dispose()
-        {
-            WasDisposed = true;
-            OnDispose?.Invoke();
-        }
-    }
+
 }
