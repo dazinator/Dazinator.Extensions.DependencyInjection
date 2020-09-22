@@ -11,7 +11,7 @@
 
 ## Intro
 
-This repository extends `Dazinator.Extensions.DependencyInjection` to provide additional features, which currently are:
+This repository builds on `Microsoft.Extensions.DependencyInjection` to provide additional features, which currently are:
 
 - Named Services
 - Child Containers
