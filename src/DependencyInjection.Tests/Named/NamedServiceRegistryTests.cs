@@ -1,6 +1,7 @@
 namespace Dazinator.Extensions.DependencyInjection.Tests.Named
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using Dazinator.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection;
@@ -251,10 +252,6 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named
                 Assert.NotNull(descriptor.ImplementationFactory);
             });
 
-
-
-
-
         }
 
 
@@ -435,6 +432,33 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named
                 Assert.NotNull(descriptor.ImplementationFactory);
             });
 
+        }
+
+        #endregion
+
+        #region ForwardedNames
+
+        [Fact]
+        public void Can_Forward_Names()
+        {
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>();
+            namedRegistrations.AddSingleton("A", new AnimalService() { SomeProperty = "A" });
+            namedRegistrations.AddSingleton("B", new AnimalService() { SomeProperty = "B" });
+
+            namedRegistrations.ForwardName("FOO", "A");
+            namedRegistrations.ForwardName("BAR", "B");
+
+            var registeredA = namedRegistrations["A"];
+            var registeredB = namedRegistrations["B"];
+
+            var registeredForwardedToA = namedRegistrations["FOO"];
+            var registeredForwardedToB = namedRegistrations["BAR"];
+
+            Assert.Throws<KeyNotFoundException>(() => namedRegistrations["FoO"]); // case sensitive.
+            Assert.Throws<KeyNotFoundException>(() => namedRegistrations["bar"]); // case sensitive.
+
+            Assert.Same(registeredA, registeredForwardedToA);
+            Assert.Same(registeredB, registeredForwardedToB);     
         }
 
         #endregion

@@ -31,6 +31,8 @@ namespace Dazinator.Extensions.DependencyInjection
             var item = Registry.GetRegistration(name);
             if (item == null)
             {
+                // potentially could allow named registration to be added dynamically here:
+                // https://github.com/dazinator/Dazinator.Extensions.DependencyInjection/issues/5
                 throw new KeyNotFoundException(name);
             }
             // A scoped service flagged with RegistrationOwnsInstance means owner - we don't track it here.

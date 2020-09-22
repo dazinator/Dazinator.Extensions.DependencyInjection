@@ -2,12 +2,16 @@ namespace Dazinator.Extensions.DependencyInjection
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using Microsoft.Extensions.DependencyInjection;
 
-    public class NamedServiceRegistry<TService> : IDisposable
+    public sealed class NamedServiceRegistry<TService> : IDisposable
     {
         private readonly IDictionary<string, NamedServiceRegistration<TService>> _namedRegistrations;
         private readonly IServiceCollection _services;
+
+        private ReaderWriterLockSlim _namedRegistrationsLock = null;
+        private readonly NamedServiceRegistrationFactory<TService> _namedRegistrationFactory;
 
         /// <summary>
         /// Construct the registry providing an <see cref="IServiceCollection"/> in which case any services registered with an empty name will also be promoted into the IServiceCollection so that you can register them directly with the IServiceProvider as essentially they are "nameless" registrations that can be resolved in the normal mannor. The benefit of this
@@ -19,18 +23,110 @@ namespace Dazinator.Extensions.DependencyInjection
         {
             _namedRegistrations = new Dictionary<string, NamedServiceRegistration<TService>>();
             _services = services;
+            _namedRegistrationFactory = new NamedServiceRegistrationFactory<TService>(GetServiceProvider);
         }
 
         public IServiceProvider ServiceProvider { get; set; }
 
         public NamedServiceRegistration<TService> this[string name] => GetRegistration(name);
 
-        public NamedServiceRegistration<TService> GetRegistration(string name) => _namedRegistrations[name];
-
-        public IEnumerable<NamedServiceRegistration<TService>> GetRegistrations()
+        public void UseDynamicLookup(Func<string, NamedServiceRegistrationFactory<TService>, NamedServiceRegistration<TService>> factory)
         {
-            var values = _namedRegistrations.Values;
-            return values;
+            if (factory == null)
+            {
+                DisableDynamicRegistrations();
+            }
+            else
+            {
+                EnableDynamicRegistrations(factory);
+            }
+        }
+
+        public void ForwardName(string from, string to)
+        {
+            if (ForwardedNameMappings == null)
+            {
+                ForwardedNameMappings = new Dictionary<string, string>();
+            }
+
+            ForwardedNameMappings.Add(from, to);
+        }
+
+        private void EnableDynamicRegistrations(Func<string, NamedServiceRegistrationFactory<TService>, NamedServiceRegistration<TService>> factory)
+        {
+            DynamicLookupRegistration = factory;
+            AreDynamicRegistrationsEnabled = true;
+            _namedRegistrationsLock = new ReaderWriterLockSlim();
+        }
+
+        private void DisableDynamicRegistrations()
+        {
+            DynamicLookupRegistration = null;
+            AreDynamicRegistrationsEnabled = false;
+            _namedRegistrationsLock?.Dispose();
+            _namedRegistrationsLock = null;
+        }
+
+        public Func<string, NamedServiceRegistrationFactory<TService>, NamedServiceRegistration<TService>> DynamicLookupRegistration { get; set; }
+
+        private Dictionary<string, string> ForwardedNameMappings { get; set; }
+
+        private bool AreDynamicRegistrationsEnabled { get; set; }
+
+        public NamedServiceRegistration<TService> GetRegistration(string name)
+        {
+            if(ForwardedNameMappings!=null)
+            {
+                if(ForwardedNameMappings.TryGetValue(name, out var newName))
+                {
+                    name = newName;
+                }
+            }
+
+            // When dynamic registration lookups are in play it means we need to lock dictionary before every read..
+            // therefore this feature is quite annoying, and if the user doesn't use it, then having to check for a lock
+            // on reads is a useless waste of resources.
+            // so.. we'll check a boolean to determine if the feature is being used, and when it isn't we'll avoid all locking.
+            if (!AreDynamicRegistrationsEnabled)
+            {
+                return _namedRegistrations[name];
+            }
+
+            _namedRegistrationsLock.EnterUpgradeableReadLock();
+            // _namedRegistrationsLock.EnterReadLock();
+            try
+            {
+                // best case we find it and return without having to upgrade lock.
+                if (_namedRegistrations.TryGetValue(name, out var reg))
+                {
+                    return reg;
+                }
+
+                // not found, let's see if we can look it up dynamically..
+                var regToAdd = DynamicLookupRegistration?.Invoke(name, _namedRegistrationFactory);
+                if (regToAdd == null)
+                {
+                    // nope..
+                    throw new KeyNotFoundException(name);
+                }
+
+                // yep, so we now need to add this to our named services cache.
+                _namedRegistrationsLock.EnterWriteLock();
+                try
+                {
+                    _namedRegistrations.Add(name, regToAdd);
+                    return regToAdd;
+                }
+                finally
+                {
+                    _namedRegistrationsLock.ExitWriteLock();
+                }
+
+            }
+            finally
+            {
+                _namedRegistrationsLock.ExitUpgradeableReadLock();
+            }
         }
 
         #region Add
@@ -40,38 +136,13 @@ namespace Dazinator.Extensions.DependencyInjection
         public void Add<TImplementationType>(ServiceLifetime lifetime, string name, Func<IServiceProvider, TImplementationType> factoryFunc = null)
             where TImplementationType : TService
         {
-            switch (lifetime)
+            if (factoryFunc == null)
             {
-                case ServiceLifetime.Scoped:
-                    if (factoryFunc == null)
-                    {
-                        AddScoped<TImplementationType>(name);
-                    }
-                    else
-                    {
-                        AddScoped(name, factoryFunc);
-                    }
-                    break;
-                case ServiceLifetime.Singleton:
-                    if (factoryFunc == null)
-                    {
-                        AddSingleton<TImplementationType>(name);
-                    }
-                    else
-                    {
-                        AddSingleton(name, factoryFunc);
-                    }
-                    break;
-                case ServiceLifetime.Transient:
-                    if (factoryFunc == null)
-                    {
-                        AddTransient<TImplementationType>(name);
-                    }
-                    else
-                    {
-                        AddTransient(name, factoryFunc);
-                    }
-                    break;
+                AddRegistration(name, typeof(TImplementationType), lifetime);
+            }
+            else
+            {
+                AddRegistration(name, (sp) => factoryFunc(sp), lifetime);
             }
         }
 
@@ -79,38 +150,13 @@ namespace Dazinator.Extensions.DependencyInjection
 
         public void Add(ServiceLifetime lifetime, string name, Func<IServiceProvider, TService> factoryFunc = null)
         {
-            switch (lifetime)
+            if (factoryFunc == null)
             {
-                case ServiceLifetime.Scoped:
-                    if (factoryFunc == null)
-                    {
-                        AddScoped(name);
-                    }
-                    else
-                    {
-                        AddScoped(name, factoryFunc);
-                    }
-                    break;
-                case ServiceLifetime.Singleton:
-                    if (factoryFunc == null)
-                    {
-                        AddSingleton(name);
-                    }
-                    else
-                    {
-                        AddSingleton(name, factoryFunc);
-                    }
-                    break;
-                case ServiceLifetime.Transient:
-                    if (factoryFunc == null)
-                    {
-                        AddTransient(name);
-                    }
-                    else
-                    {
-                        AddTransient(name, factoryFunc);
-                    }
-                    break;
+                AddRegistration(name, typeof(TService), lifetime);
+            }
+            else
+            {
+                AddRegistration(name, factoryFunc, lifetime);
             }
         }
         #endregion
@@ -225,20 +271,15 @@ namespace Dazinator.Extensions.DependencyInjection
 
         private NamedServiceRegistration<TService> AddRegistration(string name, TService singletonInstance, bool registrationOwnsLifetime)
         {
-            NamedServiceRegistration<TService> registration = null;
-
+            var reg = _namedRegistrationFactory.Create(singletonInstance, registrationOwnsLifetime);
             if (name != null && name == string.Empty)
             {
                 // promote named service with string.Empty name to a normal IServiceCollection registration, whilst also still supporting resolving as a named service with string.Empty.
                 AddServiceDescriptor(ServiceLifetime.Singleton, null, null, singletonInstance);
-                registration = new NamedServiceRegistration<TService>(singletonInstance, registrationOwnsLifetime);
             }
-            else
-            {
-                registration = new NamedServiceRegistration<TService>(singletonInstance, registrationOwnsLifetime);
-            }
-            _namedRegistrations.Add(name, registration);
-            return registration;
+
+            _namedRegistrations.Add(name, reg);
+            return reg;
         }
 
         private NamedServiceRegistration<TService> AddRegistration(string name, Type implementationType, ServiceLifetime lifetime)
@@ -249,11 +290,11 @@ namespace Dazinator.Extensions.DependencyInjection
             {
                 // promote named service with string.Empty name to a normal IServiceCollection registration, whilst also still supporting resolving as a named service with string.Empty.
                 AddServiceDescriptor(lifetime, implementationType, null);
-                registration = new NamedServiceRegistration<TService>(GetServiceProvider, lifetime);
+                registration = _namedRegistrationFactory.Create(lifetime);
             }
             else
             {
-                registration = new NamedServiceRegistration<TService>(GetServiceProvider, implementationType, lifetime);
+                registration = _namedRegistrationFactory.Create(implementationType, lifetime);
             }
             _namedRegistrations.Add(name, registration);
             return registration;
@@ -267,16 +308,15 @@ namespace Dazinator.Extensions.DependencyInjection
             {
                 // promote named service with string.Empty name to a normal IServiceCollection registration, whilst also still supporting resolving as a named service with string.Empty.
                 AddServiceDescriptor(lifetime, null, (sp) => factoryFunc(sp));
-                registration = new NamedServiceRegistration<TService>(GetServiceProvider, lifetime);
+                registration = _namedRegistrationFactory.Create(lifetime);
             }
             else
             {
-                registration = new NamedServiceRegistration<TService>(GetServiceProvider, (sp) => factoryFunc(sp), lifetime);
+                registration = _namedRegistrationFactory.Create((sp) => factoryFunc(sp), lifetime);
             }
             _namedRegistrations.Add(name, registration);
             return registration;
         }
-
 
         private void AddServiceDescriptor(ServiceLifetime lifetime, Type implementationType, Func<IServiceProvider, object> implementationFactory, object singletonInstance = null)
         {
@@ -311,21 +351,40 @@ namespace Dazinator.Extensions.DependencyInjection
 
         }
 
-
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (!disposedValue)
             {
                 if (disposing)
                 {
-                    // TODO: dispose managed state (managed objects).
-                    foreach (var key in _namedRegistrations.Keys)
+                    if (!AreDynamicRegistrationsEnabled)
                     {
-                        var item = _namedRegistrations[key];
-                        item.Dispose();
+                        // TODO: dispose managed state (managed objects).
+                        foreach (var key in _namedRegistrations.Keys)
+                        {
+                            var item = _namedRegistrations[key];
+                            item.Dispose();
+                        }
+                    }
+                    else
+                    {
+                        _namedRegistrationsLock.EnterWriteLock();
+                        // _namedRegistrationsLock.EnterReadLock();
+                        try
+                        {
+                            foreach (var key in _namedRegistrations.Keys)
+                            {
+                                var item = _namedRegistrations[key];
+                                item.Dispose();
+                            }
+                        }
+                        finally
+                        {
+                            _namedRegistrationsLock.ExitWriteLock();
+                        }
                     }
                 }
 
@@ -341,10 +400,5 @@ namespace Dazinator.Extensions.DependencyInjection
         public void Dispose() => Dispose(true);
 #pragma warning restore CA1063 // Implement IDisposable Correctly
         #endregion
-
-
-
     }
-
-
 }

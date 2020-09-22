@@ -192,3 +192,34 @@ This hopefully demontrates the above behaviour a bit more:
 ```
 
 The main reason for this feature was just so that there is one place to register all the variations of your service, and you don't have to switch between registering on the IServiceCollection seperately - so it's a convenience, in part.
+
+## Forwarded Names
+
+Suppose you register a service named "OldName".
+
+In places around your code base, you'll end up with code like this:
+
+```csharp
+ var serviceA = namedServices("OldName");
+
+```
+
+This works, but later you want to change the name the service is registered with on startup:
+
+```csharp
+ namedServices.AddSingleton("AwesomePaymentService", new PaymentService());
+
+```
+
+Suddenly code in libraries may break as they fail to resolve the service using the old name. You may have been through the code base and renamed all the names but perhaps the code in question is in a library? Or perhaps your solution is huge and you don't want to change this.
+
+You can now workaround this by using the `ForwardName` API to forward a name to another name:
+
+
+```csharp
+ namedServices.AddSingleton("AwesomePaymentService", new PaymentService());
+ namedServices.ForwardName("OldName", "AwesomePaymentService");
+
+```
+
+Now all your consumer code can continue to request the service with "OldName" but the resolution will be forwarded to the service you've registered as "AwesomePaymentService". New code can just use "AwesomePaymentService" when requesting the service if you think thats helpful - that's really for you to decide - as it may just result in a another mapping having to be added in future :-)

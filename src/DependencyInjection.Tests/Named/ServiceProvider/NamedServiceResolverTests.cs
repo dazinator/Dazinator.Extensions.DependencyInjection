@@ -1,6 +1,7 @@
 namespace Dazinator.Extensions.DependencyInjection.Tests.Named.ServiceProvider
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using Dazinator.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection;
@@ -462,6 +463,43 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named.ServiceProvider
                 Assert.Same(bear.Dependency, claws);
                 Assert.Same(notNamedBear.Dependency, claws);
             }
+        }
+
+
+        #endregion
+
+        #region ForwardedNames
+
+        [Fact]
+        public void Can_Forward_Names()
+        {
+
+            var services = new ServiceCollection();
+            var instance = new LionService();
+            services.AddNamed<AnimalService>(names =>
+            {
+                names.AddSingleton("A", instance);
+                names.AddSingleton("B", sp => new AnimalService());
+                names.ForwardName("FOO", "A");
+                names.ForwardName("BAR", "B");
+            });
+
+            var sp = services.BuildServiceProvider();
+
+            var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
+
+            var instanceA = resolver["A"];
+            var instanceB = resolver["B"];
+
+            var forwardedToA = resolver["FOO"];
+            var forwardedToB = resolver["BAR"];
+
+            Assert.Same(instanceA, forwardedToA);
+            Assert.Same(instanceB, forwardedToB);                      
+
+            Assert.Throws<KeyNotFoundException>(() => resolver["FoO"]); // case sensitive.
+            Assert.Throws<KeyNotFoundException>(() => resolver["bar"]); // case sensitive.
+          
         }
 
 
