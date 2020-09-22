@@ -1,11 +1,11 @@
 namespace Dazinator.Extensions.DependencyInjection
 {
+    using System;
+    using System.Collections.Immutable;
     using Dazinator.Extensions.DependencyInjection.ChildContainers;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection.Extensions;
-    using System;
-    using System.Collections.Immutable;
-    
+
     public static partial class ServiceCollectionExtensions
     {
         /// <summary>
