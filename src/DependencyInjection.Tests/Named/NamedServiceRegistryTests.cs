@@ -1,9 +1,7 @@
-namespace Dazinator.Extensions.DependencyInjection.Tests
+namespace Dazinator.Extensions.DependencyInjection.Tests.Named
 {
     using System;
     using System.Linq;
-    using System.Reflection.Metadata.Ecma335;
-    using System.Security.Cryptography;
     using Dazinator.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection;
     using Xunit;

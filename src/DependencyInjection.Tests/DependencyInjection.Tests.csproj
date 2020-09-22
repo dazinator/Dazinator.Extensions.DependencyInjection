@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -19,7 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dazinator.Extensions.DependencyInjection\Dazinator.Extensions.DependencyInjection.csproj" />
+    <ProjectReference Include="..\DependencyInjection.ChildContainers\DependencyInjection.ChildContainers.csproj" />
+    <ProjectReference Include="..\DependencyInjection.NamedServices\DependencyInjection.NamedServices.csproj" />
   </ItemGroup>
 
   <ItemGroup>

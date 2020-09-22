@@ -3,7 +3,7 @@ namespace Dazinator.Extensions.DependencyInjection
     using System;
     using Microsoft.Extensions.DependencyInjection;
 
-    public static class ServiceCollectionExtensions
+    public static partial class ServiceCollectionExtensions
     {
         public static IServiceCollection AddNamed<TService>(this IServiceCollection services, Action<NamedServiceRegistry<TService>> configure)
         {

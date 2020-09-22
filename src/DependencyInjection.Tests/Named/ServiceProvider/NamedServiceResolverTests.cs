@@ -1,9 +1,8 @@
-namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
+namespace Dazinator.Extensions.DependencyInjection.Tests.Named.ServiceProvider
 {
+    using System;
     using System.Threading;
     using Dazinator.Extensions.DependencyInjection;
-    using global::Autofac;
-    using global::Autofac.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection;
     using Xunit;
 
@@ -18,7 +17,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
             var instance = new LionService();
             services.AddNamed<AnimalService>(names => names.AddSingleton("A", instance));
 
-            var sp = BuildServiceProvider(services);
+            var sp = services.BuildServiceProvider();
 
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
@@ -28,22 +27,13 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
 
         }
 
-        private AutofacServiceProvider BuildServiceProvider(ServiceCollection services)
-        {
-            var containerBuilder = new ContainerBuilder();
-            containerBuilder.Populate(services);
-            var container = containerBuilder.Build();
-            var sp = new AutofacServiceProvider(container);
-            return sp;
-        }
-
         [Fact]
         public void Can_Resolve_Singleton_Type()
         {
             var services = new ServiceCollection();
             services.AddNamed<AnimalService>(names => names.AddSingleton<BearService>("A"));
 
-            var sp = BuildServiceProvider(services);
+            var sp = services.BuildServiceProvider();
 
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
@@ -63,7 +53,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
                 return new BearService();
             }));
 
-            var sp = BuildServiceProvider(services);
+            var sp = services.BuildServiceProvider();
 
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
@@ -91,7 +81,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
                 names.AddSingleton(new BearService()); //nameless
             });
 
-            var sp = BuildServiceProvider(services);
+            var sp = services.BuildServiceProvider();
 
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
@@ -137,7 +127,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
             // so that we can inject it normally, but it will also allow us to resolve it as a named service with an empty string.
             services.AddNamed<AnimalService>(names => names.AddSingleton(instance));
 
-            var sp = BuildServiceProvider(services);
+            var sp = services.BuildServiceProvider();
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var singletonInstanceA = resolver[string.Empty];
@@ -162,7 +152,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
                 names.AddTransient<LionService>("B");
             });
 
-            var sp = BuildServiceProvider(services);
+            var sp = services.BuildServiceProvider();
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var instanceA = resolver["A"];
@@ -194,7 +184,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
                 });
             });
 
-            var sp = BuildServiceProvider(services);
+            var sp = services.BuildServiceProvider();
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var instanceA = resolver["A"];
@@ -216,7 +206,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
             // so that we can inject it normally, but it will also allow us to resolve it as a named service with an empty string.
             services.AddNamed<AnimalService>(names => names.AddTransient((sp) => new LionService()));
 
-            var sp = BuildServiceProvider(services);
+            var sp = services.BuildServiceProvider();
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var instanceA = resolver[string.Empty];
@@ -243,7 +233,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
                 names.AddScoped<DisposableTigerService>("B");
             });
 
-            var sp = BuildServiceProvider(services);
+            var sp = services.BuildServiceProvider();
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var instanceA = resolver["A"];
@@ -289,6 +279,29 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
         }
 
         [Fact]
+        public void Can_Resolve_Scoped_Type_With_Dependency()
+        {
+            var services = new ServiceCollection();
+
+            services.AddScoped<Claws>();
+            services.AddNamed<AnimalService>(names =>
+            {
+                names.AddScoped<BearServiceWithDependency>("B");
+            });
+
+            var sp = services.BuildServiceProvider();
+            using (var scope = sp.CreateScope())
+            {
+                var resolver = scope.ServiceProvider.GetRequiredService<NamedServiceResolver<AnimalService>>();
+                var instanceB = resolver["B"];
+
+                Assert.IsType<BearServiceWithDependency>(instanceB);
+                Assert.NotNull(((BearServiceWithDependency)instanceB).Dependency);
+
+            }
+        }
+
+        [Fact]
         public void Can_Resolve_Scoped_WithFactoryFunc()
         {
             var services = new ServiceCollection();
@@ -303,11 +316,16 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
                 {
                     var instance = new DisposableTigerService();
                     return instance;
-
                 });
+
+                //names.AddScoped("C", sp =>
+                //{
+                //    return new BearServiceWithDependency())
+                //});
+
             });
 
-            var sp = BuildServiceProvider(services);
+            var sp = services.BuildServiceProvider();
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var instanceA = resolver["A"];
@@ -361,7 +379,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
             // so that we can inject it normally, but it will also allow us to resolve it as a named service with an empty string.
             services.AddNamed<AnimalService>(names => names.AddScoped((sp) => new LionService()));
 
-            var sp = BuildServiceProvider(services);
+            var sp = services.BuildServiceProvider();
             var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
 
             var instanceA = resolver[string.Empty];
@@ -389,7 +407,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
                 names.AddScoped<SquareService>("B");
             });
 
-            var sp = BuildServiceProvider(services);
+            var sp = services.BuildServiceProvider();
 
             using (var newScope = sp.CreateScope())
             {
@@ -401,6 +419,48 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
 
                 Assert.NotNull(animal);
                 Assert.NotNull(shape);
+            }
+        }
+
+        [Fact]
+        public void Can_Use_Named_FactoryFunc()
+        {
+            var services = new ServiceCollection();
+            services.AddNamed<Claws>(names =>
+            {
+                names.AddScoped("D");
+            });
+
+            services.AddNamed<AnimalService>(names =>
+            {
+                // Animal Service named "A" gets wired up with Claws named "D".
+                names.AddScoped("B", sp => new BearServiceWithFuncDependency(sp.GetNamedFunc<Claws>("D")));
+            });
+
+            // Service registered in normal way, gets wired up with Claws named "D".
+            services.AddScoped(sp => new BearServiceWithDependency(sp.GetNamed<Claws>("D")));
+
+            var sp = services.BuildServiceProvider();
+
+            using (var newScope = sp.CreateScope())
+            {
+                var animalResolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
+                var clawsResolver = sp.GetRequiredService<NamedServiceResolver<Claws>>();
+
+                var animal = animalResolver["B"];
+                var claws = clawsResolver["D"];
+
+                var notNamedBear = sp.GetRequiredService<BearServiceWithDependency>();
+
+                Assert.NotNull(animal);
+                Assert.NotNull(claws);
+                Assert.NotNull(notNamedBear);
+
+                Assert.IsType<BearServiceWithFuncDependency>(animal);
+                var bear = (BearServiceWithFuncDependency)animal;
+
+                Assert.Same(bear.Dependency, claws);
+                Assert.Same(notNamedBear.Dependency, claws);
             }
         }
 
@@ -418,4 +478,31 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Autofac
     {
 
     }
+
+    public class BearServiceWithDependency : AnimalService
+    {
+        private readonly Claws _dependency;
+
+        public BearServiceWithDependency(Claws dependency)
+        {
+            Dependency = dependency;
+        }
+        public Claws Dependency { get; set; }
+    }
+
+    public class Claws
+    {
+
+    }
+
+    public class BearServiceWithFuncDependency : AnimalService
+    {
+        public BearServiceWithFuncDependency(Func<Claws> factory)
+        {
+            Dependency = factory();
+        }
+        public Claws Dependency { get; set; }
+    }
+
+
 }

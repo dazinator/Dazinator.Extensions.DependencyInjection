@@ -3,7 +3,7 @@ namespace Dazinator.Extensions.DependencyInjection
     using System;
     using Microsoft.Extensions.DependencyInjection;
 
-    public static class ServiceProviderExtensions
+    public static partial class ServiceProviderExtensions
     {
         public static TService GetNamed<TService>(this IServiceProvider serviceProvider, string name = "")
         {
