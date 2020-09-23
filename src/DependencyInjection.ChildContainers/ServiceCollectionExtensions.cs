@@ -20,8 +20,13 @@ namespace Dazinator.Extensions.DependencyInjection
             return childServiceCollection;
         }
 
+#if NETSTANDARD1_3
+ public static IServiceProvider BuildChildServiceProvider(
+#else
+        public static ServiceProvider BuildChildServiceProvider(
+#endif
 
-        public static IServiceProvider BuildChildServiceProvider(this IChildServiceCollection childServiceCollection, IServiceProvider parentServiceProvider)
+            this IChildServiceCollection childServiceCollection, IServiceProvider parentServiceProvider)
         {
             // add all the same registrations that are in the parent to the child,
             // but rewrite them to resolve from the parent IServiceProvider.

@@ -5,7 +5,8 @@
     <PackageId>Dazinator.Extensions.DependencyInjection.ChildContainers</PackageId>
   </PropertyGroup>
 
-
+  <PropertyGroup>
+  </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.2" />
     <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
