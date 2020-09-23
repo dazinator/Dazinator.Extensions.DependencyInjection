@@ -495,13 +495,93 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named.ServiceProvider
             var forwardedToB = resolver["BAR"];
 
             Assert.Same(instanceA, forwardedToA);
-            Assert.Same(instanceB, forwardedToB);                      
+            Assert.Same(instanceB, forwardedToB);
 
             Assert.Throws<KeyNotFoundException>(() => resolver["FoO"]); // case sensitive.
             Assert.Throws<KeyNotFoundException>(() => resolver["bar"]); // case sensitive.
-          
+
         }
 
+
+        #endregion
+
+        #region DynamicLookup
+
+        [Fact]
+        public void Can_Use_Dynamic_Lookup()
+        {
+            var services = new ServiceCollection();
+            var instance = new LionService();
+
+            var lateRequestsMade = new List<string>();
+            services.AddNamed<AnimalService>(names =>
+            {
+                names.AddSingleton("A", instance);
+                names.AddLateRegistration((name, factory) =>
+                {
+                    // Capturing the name that was requested for test assertions..
+                    lateRequestsMade.Add(name);
+
+                    if (name.StartsWith("Transient"))
+                    {
+                        return factory.Result((a) => a.Create(ServiceLifetime.Transient));
+                    };
+
+                    if (name.StartsWith("ScopedWithFactory"))
+                    {
+                        return factory.Result((a) => a.Create((sp) => new AnimalService(), ServiceLifetime.Scoped));
+                    }
+
+                    if (name.StartsWith("SingletonWithImplementationType"))
+                    {
+                        return factory.Result(a => a.Create<LionService>(ServiceLifetime.Singleton));
+                    }
+
+                    if (name.StartsWith("AB"))
+                    {
+                        // don't register a new service, just use existing registered service named "A".
+                        return factory.Result(null, forwardToName: "A");
+                    }
+
+                    return null; //nah
+                });
+            });
+
+            var sp = services.BuildServiceProvider();
+
+            var resolver = sp.GetRequiredService<NamedServiceResolver<AnimalService>>();
+
+
+            var scopedA = resolver["ScopedWithFactory"];
+            var scopedB = resolver["ScopedWithFactory"];
+            Assert.Same(scopedA, scopedB);
+
+            Assert.Single(lateRequestsMade);
+            Assert.Contains("ScopedWithFactory", lateRequestsMade);
+
+            var transientA = resolver["Transient"];
+            Assert.Contains("Transient", lateRequestsMade);
+            Assert.Equal(2, lateRequestsMade.Count);
+
+            var transientB = resolver["Transient"];
+            Assert.Equal(2, lateRequestsMade.Count);
+            Assert.NotSame(transientA, transientB); // transient services so should be different instances.
+
+            var singletonA = resolver["SingletonWithImplementationType"];
+            var singletonB = resolver["SingletonWithImplementationType"];          
+            Assert.Contains("SingletonWithImplementationType", lateRequestsMade);
+            Assert.Equal(3, lateRequestsMade.Count);
+            Assert.Same(singletonA, singletonB); // singleton services so should be same instances.
+
+            // test forwarded late registration
+            var forwarded = resolver["AB"]; // should be forwarded to registration named "A" which is a singleton
+            var forwardedTarget = resolver["A"]; // should get same singleton
+            Assert.Same(forwardedTarget, forwarded);
+
+            Assert.Equal(4, lateRequestsMade.Count);
+            Assert.Contains("AB", lateRequestsMade);
+
+        }
 
         #endregion
 

@@ -223,3 +223,53 @@ You can now workaround this by using the `ForwardName` API to forward a name to 
 ```
 
 Now all your consumer code can continue to request the service with "OldName" but the resolution will be forwarded to the service you've registered as "AwesomePaymentService". New code can just use "AwesomePaymentService" when requesting the service if you think thats helpful - that's really for you to decide - as it may just result in a another mapping having to be added in future :-)
+
+## Late Registrations
+
+In some particularly dynamic applications, it may not be known on application startup what the entire list of named services is that you will need.
+
+For example, in an application where you create new tenants at runtime, suppose you want each tenant to be able to have a service that can be retreived based on the tenants ID or unique name. 
+
+`LateRegistrations` let's you provide a delegate as a fallback so that when a named service is requested, and no registration for that name already exists, your delegate will fire and be given a chance to create a registration for that name that will then be used for all susequent requests.
+
+For example:
+
+```csharp
+
+      var requestsMade = new List<string>();
+      services.AddNamed<DatabaseService>(names =>
+      {
+          names.AddSingleton("A", instance);
+          names.AddLateRegistration((name, factory) =>
+          {
+              // Capturing the name that was requested for test assertions..
+              requestsMade.Add(name);
+
+              if (name.StartsWith("TenantID:"))
+              {
+                  return factory.Result((a) => a.Create<TenantDatabaseService>(ServiceLifetime.Scoped));
+              };
+
+              if (name.StartsWith("AppId:"))
+              {
+                  return factory.Result((a) => a.Create((sp) => new AppDatabaseService(), ServiceLifetime.Scoped));
+              }
+
+              if (name.StartsWith("System:"))
+              {
+                  return factory.Result(a => a.Create<SystemDatabaseService>(ServiceLifetime.Singleton));
+              }
+
+              // Don't have to create a new registration, you can also map requests with this name to an existing name:
+              if(name.StartsWith("AB"))
+              {
+                  // don't register a new service, just use existing registered service named "A".
+                  return factory.Result(null, forwardToName: "A");
+              }                  
+            
+              // You don't have to satisfy this request, you can return null, in which case the caller will get `KeyNotFoundException` at the callsite when requesting the service with the name.
+              return null; //nah
+          });
+      });
+
+```

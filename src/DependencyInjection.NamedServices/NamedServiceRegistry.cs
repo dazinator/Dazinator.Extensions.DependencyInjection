@@ -30,15 +30,15 @@ namespace Dazinator.Extensions.DependencyInjection
 
         public NamedServiceRegistration<TService> this[string name] => GetRegistration(name);
 
-        public void UseDynamicLookup(Func<string, NamedServiceRegistrationFactory<TService>, NamedServiceRegistration<TService>> factory)
+        public void AddLateRegistration(Func<string, LateRegistrationResultBuilder<TService>, LateRegistrationResult<TService>> factory)
         {
             if (factory == null)
             {
-                DisableDynamicRegistrations();
+                DisableLateRegistrations();
             }
             else
             {
-                EnableDynamicRegistrations(factory);
+                EnableLateRegistrations(factory);
             }
         }
 
@@ -52,32 +52,36 @@ namespace Dazinator.Extensions.DependencyInjection
             ForwardedNameMappings.Add(from, to);
         }
 
-        private void EnableDynamicRegistrations(Func<string, NamedServiceRegistrationFactory<TService>, NamedServiceRegistration<TService>> factory)
+        private void EnableLateRegistrations(Func<string, LateRegistrationResultBuilder<TService>, LateRegistrationResult<TService>> factory)
         {
-            DynamicLookupRegistration = factory;
+            LateRegistrationFactory = factory;
             AreDynamicRegistrationsEnabled = true;
             _namedRegistrationsLock = new ReaderWriterLockSlim();
+            _lazyBuilder = new Lazy<LateRegistrationResultBuilder<TService>>(() => new LateRegistrationResultBuilder<TService>(_namedRegistrationFactory));
         }
 
-        private void DisableDynamicRegistrations()
+        private void DisableLateRegistrations()
         {
-            DynamicLookupRegistration = null;
+            LateRegistrationFactory = null;
             AreDynamicRegistrationsEnabled = false;
             _namedRegistrationsLock?.Dispose();
             _namedRegistrationsLock = null;
+            _lazyBuilder = null;
         }
 
-        public Func<string, NamedServiceRegistrationFactory<TService>, NamedServiceRegistration<TService>> DynamicLookupRegistration { get; set; }
+        public Func<string, LateRegistrationResultBuilder<TService>, LateRegistrationResult<TService>> LateRegistrationFactory { get; set; }
 
         private Dictionary<string, string> ForwardedNameMappings { get; set; }
 
         private bool AreDynamicRegistrationsEnabled { get; set; }
 
+        private Lazy<LateRegistrationResultBuilder<TService>> _lazyBuilder = null;
+
         public NamedServiceRegistration<TService> GetRegistration(string name)
         {
-            if(ForwardedNameMappings!=null)
+            if (ForwardedNameMappings != null)
             {
-                if(ForwardedNameMappings.TryGetValue(name, out var newName))
+                if (ForwardedNameMappings.TryGetValue(name, out var newName))
                 {
                     name = newName;
                 }
@@ -103,10 +107,17 @@ namespace Dazinator.Extensions.DependencyInjection
                 }
 
                 // not found, let's see if we can look it up dynamically..
-                var regToAdd = DynamicLookupRegistration?.Invoke(name, _namedRegistrationFactory);
-                if (regToAdd == null)
+                var builder = _lazyBuilder.Value;
+                var result = LateRegistrationFactory?.Invoke(name, builder);
+                if (result == null)
                 {
                     // nope..
+                    throw new KeyNotFoundException(name);
+                }
+
+                if (string.IsNullOrEmpty(result.ForwardName) && result.NewRegistration == null)
+                {
+                    // this shouldn't happen as we shouldn't allow the object to be created in such a state with both null properties.
                     throw new KeyNotFoundException(name);
                 }
 
@@ -114,8 +125,19 @@ namespace Dazinator.Extensions.DependencyInjection
                 _namedRegistrationsLock.EnterWriteLock();
                 try
                 {
-                    _namedRegistrations.Add(name, regToAdd);
-                    return regToAdd;
+                    if (!string.IsNullOrEmpty(result.ForwardName))
+                    {
+                        ForwardName(name, result.ForwardName);
+                        if (result.NewRegistration != null)
+                        {
+                            _namedRegistrations.Add(result.ForwardName, result.NewRegistration);
+                            return result.NewRegistration;
+                        }
+                        return _namedRegistrations[result.ForwardName];
+                    }
+
+                    _namedRegistrations.Add(name, result.NewRegistration);
+                    return result.NewRegistration;
                 }
                 finally
                 {
@@ -290,7 +312,7 @@ namespace Dazinator.Extensions.DependencyInjection
             {
                 // promote named service with string.Empty name to a normal IServiceCollection registration, whilst also still supporting resolving as a named service with string.Empty.
                 AddServiceDescriptor(lifetime, implementationType, null);
-                registration = _namedRegistrationFactory.Create(lifetime);
+                registration = _namedRegistrationFactory.CreatePassThrough(lifetime);
             }
             else
             {
@@ -308,7 +330,7 @@ namespace Dazinator.Extensions.DependencyInjection
             {
                 // promote named service with string.Empty name to a normal IServiceCollection registration, whilst also still supporting resolving as a named service with string.Empty.
                 AddServiceDescriptor(lifetime, null, (sp) => factoryFunc(sp));
-                registration = _namedRegistrationFactory.Create(lifetime);
+                registration = _namedRegistrationFactory.CreatePassThrough(lifetime);
             }
             else
             {
@@ -401,4 +423,5 @@ namespace Dazinator.Extensions.DependencyInjection
 #pragma warning restore CA1063 // Implement IDisposable Correctly
         #endregion
     }
+
 }

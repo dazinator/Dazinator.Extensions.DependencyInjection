@@ -5,6 +5,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named
     using System.Linq;
     using Dazinator.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection;
+    using NuGet.Frameworks;
     using Xunit;
 
     public class NamedServiceRegistryTests
@@ -458,7 +459,73 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named
             Assert.Throws<KeyNotFoundException>(() => namedRegistrations["bar"]); // case sensitive.
 
             Assert.Same(registeredA, registeredForwardedToA);
-            Assert.Same(registeredB, registeredForwardedToB);     
+            Assert.Same(registeredB, registeredForwardedToB);
+        }
+
+        #endregion
+
+        #region DynamicLookup
+
+        [Fact]
+        public void Can_Use_Dynamic_Lookup()
+        {
+            var namedRegistrations = new NamedServiceRegistry<AnimalService>();
+            namedRegistrations.AddSingleton("A", new AnimalService() { SomeProperty = "A" });
+            namedRegistrations.AddSingleton("B", new AnimalService() { SomeProperty = "B" });
+
+            var requestsMade = new List<string>();
+
+            namedRegistrations.AddLateRegistration((name, factory) =>
+            {
+                // Capturing the name that was requested for test assertions..
+                requestsMade.Add(name);
+
+                if (name.StartsWith("Transient"))
+                {
+                    return factory.Result((a)=>a.Create(ServiceLifetime.Transient));
+                };
+
+                if (name.StartsWith("ScopedWithFactory"))
+                {
+                    return factory.Result((a) => a.Create((sp) => new AnimalService(), ServiceLifetime.Scoped));
+                }
+
+                if (name.StartsWith("SingletonWithImplementationType"))
+                {
+                    return factory.Result(a=>a.Create<LionService>(ServiceLifetime.Singleton));
+                }
+                // satisfy any other unrecognised names?
+                return null; //nah
+            });
+
+            // make sure it works with the forwarded names feature.
+            namedRegistrations.ForwardName("S", "ScopedWithFactory");
+
+            var scoped = namedRegistrations["ScopedWithFactory"];
+
+            Assert.Single(requestsMade);
+            Assert.Contains("ScopedWithFactory", requestsMade);
+
+            var scopedForwarded = namedRegistrations["S"];
+            Assert.Single(requestsMade); // shouldn't have resulted in any more calls as mapped to "ScopedWithFactory"
+
+            Assert.Same(scoped, scopedForwarded);
+
+            var transientA = namedRegistrations["Transient"];
+            Assert.Contains("Transient", requestsMade);
+            Assert.Equal(2, requestsMade.Count);
+
+            var transientB = namedRegistrations["Transient"];
+            Assert.Equal(2, requestsMade.Count); // no more calls made
+            Assert.Same(transientA, transientB); // its the same registration that provides the transient instance - don't get confused
+
+            var singletonA = namedRegistrations["SingletonWithImplementationType"];
+            Assert.Contains("SingletonWithImplementationType", requestsMade);
+            Assert.Equal(3, requestsMade.Count);
+
+            var singletonB = namedRegistrations["SingletonWithImplementationType"];
+            Assert.Equal(3, requestsMade.Count); // no more calls made
+            Assert.Same(singletonA, singletonB); // same singleton isntance.           
         }
 
         #endregion

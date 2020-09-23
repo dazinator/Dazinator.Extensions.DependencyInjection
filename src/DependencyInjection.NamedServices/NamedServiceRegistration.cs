@@ -87,7 +87,7 @@ namespace Dazinator.Extensions.DependencyInjection
         /// Allows the service to be resolved using normal DI, as well as resolving it as a named service with a default name of <see cref="string.Empty"/> 
         /// </summary>
         /// <param name="serviceProvider"></param>
-        /// <param name="lifetime"></param>
+        /// <param name="lifetime">This argument primarily effects whether the instance will be optimised</param>
         public NamedServiceRegistration(Func<IServiceProvider> serviceProvider, ServiceLifetime lifetime)
         {
             Lifetime = lifetime;
@@ -114,8 +114,7 @@ namespace Dazinator.Extensions.DependencyInjection
             }
             else if (lifetime == ServiceLifetime.Transient || lifetime == ServiceLifetime.Scoped)
             {
-                // Perf: we do care about speed of creating transient or scoped instances as it could
-                // happen many times during the lifetime of the application. So we use ObjectFactory here.
+                // Perf: this path could happen many times during the lifetime of the application. So we should use ObjectFactory here?
                 InstanceFactory = (sp) => sp.GetRequiredService<TService>();
             }
 
