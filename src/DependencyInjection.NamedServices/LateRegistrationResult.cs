@@ -4,9 +4,9 @@ namespace Dazinator.Extensions.DependencyInjection
 {
     public class LateRegistrationResult<TService>
     {
-        public LateRegistrationResult(NamedServiceRegistration<TService> newRegistration,string forwardToName)
+        public LateRegistrationResult(NamedServiceRegistration<TService> newRegistration, string forwardToName)
         {
-            if(newRegistration == null && string.IsNullOrEmpty(forwardToName))
+            if (newRegistration == null && string.IsNullOrEmpty(forwardToName))
             {
                 throw new ArgumentException("Must provide a new registration, or a forwardToName, both cannot be null");
             }

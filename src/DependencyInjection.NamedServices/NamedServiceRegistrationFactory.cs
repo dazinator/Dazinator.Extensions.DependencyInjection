@@ -62,7 +62,7 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <param name="lifetime"></param>
         /// <returns></returns>
         public NamedServiceRegistration<TService> Create<TImplementationType>(ServiceLifetime lifetime)
-            where TImplementationType: TService
+            where TImplementationType : TService
         {
             NamedServiceRegistration<TService> registration = null;
             registration = new NamedServiceRegistration<TService>(_getServiceProvider, typeof(TImplementationType), lifetime);

@@ -568,7 +568,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named.ServiceProvider
             Assert.NotSame(transientA, transientB); // transient services so should be different instances.
 
             var singletonA = resolver["SingletonWithImplementationType"];
-            var singletonB = resolver["SingletonWithImplementationType"];          
+            var singletonB = resolver["SingletonWithImplementationType"];
             Assert.Contains("SingletonWithImplementationType", lateRequestsMade);
             Assert.Equal(3, lateRequestsMade.Count);
             Assert.Same(singletonA, singletonB); // singleton services so should be same instances.

@@ -482,7 +482,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named
 
                 if (name.StartsWith("Transient"))
                 {
-                    return factory.Result((a)=>a.Create(ServiceLifetime.Transient));
+                    return factory.Result((a) => a.Create(ServiceLifetime.Transient));
                 };
 
                 if (name.StartsWith("ScopedWithFactory"))
@@ -492,7 +492,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named
 
                 if (name.StartsWith("SingletonWithImplementationType"))
                 {
-                    return factory.Result(a=>a.Create<LionService>(ServiceLifetime.Singleton));
+                    return factory.Result(a => a.Create<LionService>(ServiceLifetime.Singleton));
                 }
                 // satisfy any other unrecognised names?
                 return null; //nah
