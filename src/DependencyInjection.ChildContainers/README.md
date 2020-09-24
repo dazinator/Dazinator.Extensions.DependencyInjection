@@ -46,6 +46,8 @@ Child containers add some complexity to your solution, but the basic idea is thi
 
 ## More Detail!
 
+Please also make sure to read section titled "Known Limitations" below.
+
 With the power of child containers comes the complexity of working out where you want to register services.
 
 Register services at different levels:
@@ -105,3 +107,102 @@ this.Services = services.Where(a=>a.Type.Name=="Foo").ToList();
 ```
 
 This was a design decision - it's better to potentially include "too many" services and allow you to filter them yourself, that in is to autoamtically assume child registrations are not "additive" to parent ones, and perform auto substitution / replacement.
+
+
+# Known Limitations
+
+## Singleton Open Generic Registrations in Parent Container - Not Supported
+
+When singleton open generic types are registered in the parent container (and Microsoft.Extensions.Hosting adds a bunch by default):
+
+```
+services.AddSingleton(typeof(IOptions<>), typeof(OptionsManager<T>));
+
+```
+
+The ideal behaviour (and sadly one that does not currently work) would be that the same instance is returned when resolving from either parent of child container when using the same type params, e.g:
+
+```
+  // Singleton open generic registered only in parent container
+  services.AddSingleton(typeof(IOptions<>), typeof(OptionsManager<T>));
+
+  var childServices = services.CreateChildServiceCollection(); // no additional registrations added to child container.
+  
+  var parentServiceProvider = services.BuildServiceProvider();
+  var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+
+  var instanceA = parentServiceProvider.GetRequiredService<IOptions<Program>>();
+  var instanceB = childServiceProvider.GetRequiredService<IOptions<Program>>();
+
+  Assert.Same(instanceA,instanceB); // failse
+
+```
+
+So, this currently isn't possible (will require some very "creative thinking" at the least)
+
+The issue is that, singleton instances must be constructed prior to adding the registrations to the child container so that the child container can resolve to an existing instance (one that the child container doesn't itself create).
+However there is no way to create an instance of an open generic type "in advance" without knowing the type paramaters that "close" it - and these aren't established until the container is asked to resolve the concrete service.
+.. and the only way to allow microsofts container to resolve such a request is to register the open generic in the container so that the container is responsible for creating the instance.
+... and this means that there is no opportunity to get the container to resolve the same instance as the parent container. Both containers will create their own instances of the open generic type.
+
+This may not be an issue for the majority of services, but it could be.
+Rather than silently exhibit potentially unexpected behaviour, I have decided by default to throw an exception when these registrations are encountered so that you can address this yourself in your application:
+This is the exception you will see when attempting to build a child container and the parent has singleton open generic registrations:
+
+> Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider.GenericHostTests.Options_WorksInChildContainers(args: [""])
+   Source: GenericHost.cs line 23
+   Duration: 269 ms
+
+ > Message: 
+    System.NotSupportedException : Open generic types registered as singletons in the parent container are not supported when using child containers: 
+    ServiceType: Microsoft.Extensions.Options.IOptions`1
+    ServiceType: Microsoft.Extensions.Options.IOptionsMonitor`1
+    ServiceType: Microsoft.Extensions.Options.IOptionsMonitorCache`1
+    ServiceType: Microsoft.Extensions.Logging.ILogger`1
+    ServiceType: Microsoft.Extensions.Logging.Configuration.ILoggerProviderConfiguration`1
+    
+ > Stack Trace: 
+    ServiceCollectionExtensions.ThrowUnsupportedDescriptors(List`1 unsupportedDescriptors) line 73
+    ServiceCollectionExtensions.BuildChildServiceProvider(IChildServiceCollection childServiceCollection, IServiceProvider parentServiceProvider) line 52
+    TestHostedService.StartAsync(CancellationToken cancellationToken) line 118
+    Host.StartAsync(CancellationToken cancellationToken)
+    GenericHostTests.Options_WorksInChildContainers(String[] args) line 63
+    --- End of stack trace from previous location where exception was thrown ---
+
+
+ How to workaround? You have some options. The `BuildChildServiceProvider()` method actually takes an additional enum argument `SingletonOpenGenericResolutionBehaviour`:
+
+ ```
+
+ var childServiceProvider = childServices.BuildChildServiceProvider(_serviceProvider, SingletonOpenGenericResolutionBehaviour.Omit);
+
+ ```
+
+ The default if you don't specify this is `ParentSingletonOpenGenericResolutionBehaviour.ThrowNotSupportedException' but here are the options:
+
+ ```
+
+    public enum ParentSingletonOpenGenericResolutionBehaviour
+    {
+        /// <summary>
+        /// If there are singleton open generic registerations in the parent container then an exception will be thrown when creating the child container. This is because there is currnetly no way to have the child container resolve the same instance of those as when resolved through the parent container. From the exception you can see a list of these unsupported registrations and then work out how to handle them.
+        /// </summary>
+        ThrowNotSupportedException = 0,
+        /// <summary>
+        /// If there are singleton open generic registerations in the parent container, they will also be registered again in the child container as seperate singletons. This means resolving an open generic type with the same type parameters in the parent and child container will yield two seperate instances of that service.
+        /// </summary>
+        RegisterAgainAsSeperateSingletonInstancesInChildContainer = 1,
+        /// <summary>
+        /// If there are singleton open generic registerations in the parent container, they will be omitted from the child container. In other words you'll have to register them into the child container yourself otherwise they will fail to resolve from the child container.
+        /// </summary>
+        Omit = 2
+    }
+
+
+ ```
+
+ There is no perfect solution here, hopefull the enum comments above are sufficient to explain your options.
+
+ The "safest" option in my view, is to probably go for "omit" and then don't rely on the open generics feature to satisfy service resolutions in your child containers, or register the services that you need into the child container yourself.
+
+ If anyone has any bright ideas for a solution to this problem I am all ears.

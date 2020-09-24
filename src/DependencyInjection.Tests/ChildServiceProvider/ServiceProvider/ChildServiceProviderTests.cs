@@ -39,6 +39,32 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             Assert.NotNull(childService);
         }
 
+        [Fact]
+        [Description("Services registered in the parent container as singleton open generics, are not supported and should cause an exception to be thrown by default unless user specifies a behaviour flag to opt in to a workaround.")]
+        public void ParentService_SingletonOpenGeneric_ThrowsByDefault()
+        {
+            var parentServices = new ServiceCollection();
+            var descriptorA = new ServiceDescriptor(typeof(IGenericServiceA<>), typeof(GenericAnimalService<>), ServiceLifetime.Singleton);
+
+            parentServices.Add(descriptorA);
+
+            Assert.Throws<System.NotSupportedException>(() => new ChildServiceCollection(parentServices.ToImmutableList()));
+
+            //var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
+
+            //var parentServiceProvider = parentServices.BuildServiceProvider();
+            //var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+
+            //var parentService = parentServiceProvider.GetRequiredService<AnimalService>();
+            //var childService = childServiceProvider.GetRequiredService<AnimalService>();
+
+            //Assert.NotNull(parentService);
+            //Assert.NotNull(childService);
+            //Assert.Same(parentService, childService);
+        }
+
+
+
         [Theory]
         [Description("Created by the correct container.")]
         [InlineData(ServiceLifetime.Transient, true)]
@@ -299,7 +325,17 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
 
     }
 
-    public class GenericAnimalService<TMarker> : AnimalService
+    public class GenericAnimalService<TMarker> : AnimalService, IGenericServiceA<TMarker>, IGenericServiceB<TMarker>
+    {
+
+    }
+
+    public interface IGenericServiceA<TMarker>
+    {
+
+    }
+
+    public interface IGenericServiceB<TMarker>
     {
 
     }

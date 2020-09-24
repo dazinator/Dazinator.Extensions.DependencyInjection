@@ -3,7 +3,9 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Collections.Immutable;
     using System.Linq;
+    using System.Text;
     using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
@@ -14,7 +16,47 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
 
         private readonly List<ServiceDescriptor> _descriptors = new List<ServiceDescriptor>();
 
-        public ChildServiceCollection(IReadOnlyList<ServiceDescriptor> parent) => Parent = parent;
+        public ChildServiceCollection(IReadOnlyList<ServiceDescriptor> parent, ParentSingletonOpenGenericResolutionBehaviour singletonOpenGenericBehaviour = ParentSingletonOpenGenericResolutionBehaviour.ThrowNotSupportedException)
+        {
+            Parent = parent;
+            SingletonOpenGenericBehaviour = singletonOpenGenericBehaviour;
+
+            var singletonOpenGenerics = Parent.Where(a => (a.Lifetime == ServiceLifetime.Singleton && !a.ServiceType.IsClosedType())).ToArray();
+
+            if (SingletonOpenGenericBehaviour == ParentSingletonOpenGenericResolutionBehaviour.Omit)
+            {
+                if (singletonOpenGenerics.Any())
+                {
+                    // filter out singleton open generics from parent if thats the behaviour.
+                    Parent = Parent.Except(singletonOpenGenerics).ToImmutableArray();
+                }
+            }
+            else if(SingletonOpenGenericBehaviour == ParentSingletonOpenGenericResolutionBehaviour.ThrowNotSupportedException)
+            {
+                if (singletonOpenGenerics.Any())
+                {
+                    ThrowUnsupportedDescriptors(singletonOpenGenerics);
+                }
+            }
+            else if(SingletonOpenGenericBehaviour == ParentSingletonOpenGenericResolutionBehaviour.RegisterAgainAsSeperateSingletonInstancesInChildContainer)
+            {
+                foreach (var item in singletonOpenGenerics)
+                {
+                    _descriptors.Add(item);
+                }
+            }
+        }
+
+        private static void ThrowUnsupportedDescriptors(IEnumerable<ServiceDescriptor> unsupportedDescriptors)
+        {
+            var typesMessageBuilder = new StringBuilder();
+            foreach (var item in unsupportedDescriptors)
+            {
+                typesMessageBuilder.AppendLine($"ServiceType: {item.ServiceType.FullName}");
+            }
+            throw new NotSupportedException("Open generic types registered as singletons in the parent container are not supported when using child containers: " + Environment.NewLine + typesMessageBuilder.ToString());
+        }
+
 
         /// <inheritdoc />
         public int Count => _descriptors.Count + Parent.Count;
@@ -23,6 +65,7 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
         public bool IsReadOnly => false;
 
         public IReadOnlyList<ServiceDescriptor> Parent { get; }
+        public ParentSingletonOpenGenericResolutionBehaviour SingletonOpenGenericBehaviour { get; private set; }
 
         /// <inheritdoc />
         public ServiceDescriptor this[int index]

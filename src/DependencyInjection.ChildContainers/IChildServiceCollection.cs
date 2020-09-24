@@ -10,6 +10,7 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
     {
         IEnumerable<ServiceDescriptor> ChildDescriptors { get; }
         IEnumerable<ServiceDescriptor> ParentDescriptors { get; }
+        ParentSingletonOpenGenericResolutionBehaviour SingletonOpenGenericBehaviour { get; }
     }
 
 
