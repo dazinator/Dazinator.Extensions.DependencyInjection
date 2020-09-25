@@ -46,8 +46,10 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var descriptorA = new ServiceDescriptor(typeof(IGenericServiceA<>), typeof(GenericAnimalService<>), ServiceLifetime.Singleton);
 
             parentServices.Add(descriptorA);
+            var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
 
-            Assert.Throws<System.NotSupportedException>(() => new ChildServiceCollection(parentServices.ToImmutableList()));
+            var serviceProvider = parentServices.BuildServiceProvider();
+            Assert.Throws<System.NotSupportedException>(() => childServices.BuildChildServiceProvider(serviceProvider));
 
             //var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
 
