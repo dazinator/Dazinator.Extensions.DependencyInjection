@@ -139,7 +139,7 @@ namespace Dazinator.Extensions.DependencyInjection
 
             // These incompatible services shoul dhave already been filtered out of the child service collection based on its behaviour constructor arg..
             // so we shouldn't hit this.
-            if(singletonOpenGenericBehaviour != ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)
+            if (singletonOpenGenericBehaviour != ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)
             {
                 throw new NotSupportedException("Parent singleton open generic registrations are not supported");
             }

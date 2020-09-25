@@ -423,7 +423,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named.Autofac
     {
 
     }
-    public class OpenGeneric<T>:IOpenGeneric<T>
+    public class OpenGeneric<T> : IOpenGeneric<T>
     {
 
     }

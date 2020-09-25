@@ -31,14 +31,14 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
                     Parent = Parent.Except(singletonOpenGenerics).ToImmutableArray();
                 }
             }
-            else if(SingletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.ThrowNotSupportedException)
+            else if (SingletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.ThrowNotSupportedException)
             {
                 if (singletonOpenGenerics.Any())
                 {
                     ThrowUnsupportedDescriptors(singletonOpenGenerics);
                 }
             }
-            else if(SingletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)
+            else if (SingletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)
             {
                 foreach (var item in singletonOpenGenerics)
                 {

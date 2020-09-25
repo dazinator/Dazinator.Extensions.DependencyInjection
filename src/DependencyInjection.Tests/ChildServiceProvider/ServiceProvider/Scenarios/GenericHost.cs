@@ -30,7 +30,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
 
             builder.ConfigureHostConfiguration(config =>
             {
-                config.AddEnvironmentVariables(); 
+                config.AddEnvironmentVariables();
                 if (args != null)
                 {
                     config.AddCommandLine(args);
