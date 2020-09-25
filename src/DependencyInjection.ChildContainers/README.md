@@ -140,15 +140,13 @@ The ideal behaviour (and sadly one that does not currently work) would be that t
 
 So, this currently isn't possible (will require some very "creative thinking" at the least)
 
-The issue is that, singleton instances must be constructed prior to adding the registrations to the child container so that the child container can resolve to an existing instance (one that the child container doesn't itself create).
-However there is no way to create an instance of an open generic type "in advance" without knowing the type paramaters that "close" it - and these aren't established until the container is asked to resolve the concrete service.
-.. and the only way to allow microsofts container to resolve such a request is to register the open generic in the container so that the container is responsible for creating the instance.
-... and this means that there is no opportunity to get the container to resolve the same instance as the parent container. Both containers will create their own instances of the open generic type.
+The issue is that, singleton open generic type registrations, cannot have instances provided from "elsewhere" - the native ServiceProvider will always create them based on the closed type definition when the service is resolved, and because it creates the instance, it will own them, and it will be a different instance from one the parent container might already have.
+So the lack of this capability is at odds with being able to supply the same instance owned from the parent container.
 
 More discussion found here: https://github.com/dotnet/runtime/issues/41050#issuecomment-698642970
 
 This may not be an issue for the majority of services, but it could be.
-Rather than silently exhibit potentially unexpected behaviour, I decided by default to throw an exception when these registrations are encountered so that you can address this yourself in your application:
+Rather than silently exhibit potentially unexpected behaviour, I thought it best to throw an exception when these registrations are encountered so that you can address this yourself in your application by using an enum to select a desired workaround behaviour.
 This is the exception you will see when attempting to build a child container and the parent has singleton open generic registrations:
 
 > Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider.GenericHostTests.Options_WorksInChildContainers(args: [""])
@@ -172,7 +170,7 @@ This is the exception you will see when attempting to build a child container an
     --- End of stack trace from previous location where exception was thrown ---
 
 
- How to workaround? You have some options. Pass an enum by default to specify your desired workaround behavior:
+ How to workaround? You have the option to pass an enum to specify your desired workaround behavior:
 
  ```csharp
    var childServiceProvider = services.CreateChildServiceProvider(serviceProvider, (childServices) =>
@@ -206,6 +204,7 @@ This is the exception you will see when attempting to build a child container an
 
  There is no perfect solution here, hopefull the enum comments above are sufficient to explain your options.
 
- The "safest" option in my view, is to probably go for "omit" and then don't rely on the open generics feature to satisfy service resolutions in your child containers, or register the services that you need into the child container yourself.
+ The "safest" option in my view, is to probably go for "omit" and then don't rely on the open generics feature to satisfy service resolutions in your child containers. 
+ `DuplicateSingletons` should be used with caution as it may cause particular services not to behave as desired.
 
  If anyone has any bright ideas for a solution to this problem I am all ears.
