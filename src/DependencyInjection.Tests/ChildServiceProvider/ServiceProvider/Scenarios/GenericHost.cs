@@ -22,7 +22,6 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
         [InlineData("")]
         public async Task Options_WorksInChildContainers(params string[] args)
         {
-
             IHost host = null;
             var cancelTokenSource = new CancellationTokenSource();
 
@@ -31,7 +30,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
 
             builder.ConfigureHostConfiguration(config =>
             {
-                config.AddEnvironmentVariables(); // TODO: Prefix?
+                config.AddEnvironmentVariables(); 
                 if (args != null)
                 {
                     config.AddCommandLine(args);
@@ -40,17 +39,13 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
 
             builder.ConfigureLogging((hostingContext, logging) =>
               {
-                  logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
+                  // logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
                   logging.AddConsole();
                   logging.AddDebug();
                   logging.AddEventSourceLogger();
               })
                .ConfigureServices(s =>
                 {
-                    //foreach (var item in openGenericDescriptors)
-                    //{
-                    //    item. = 
-                    //}
                     s.AddHostedService<TestHostedService>(sp =>
                     {
                         var hostLifetime = sp.GetRequiredService<IHostApplicationLifetime>();
@@ -71,7 +66,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var cancelToken = cancelTokenSource.Token;
             var runningTask = host.RunAsync(cancelToken);
 
-            int runningSeconds = 0;
+            var runningSeconds = 0;
             while (!cancelToken.IsCancellationRequested && !runningTask.IsCompleted)
             {
                 if (!runningTask.IsCompleted)
@@ -81,21 +76,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
                     runningSeconds += 1;
                 }
             }
-
-            var hostServices = host.Services; // has this now been disposed?
-
-
-
         }
-
-
-        // public static IHostBuilder CreateHostBuilder(string[] args) =>
-        //Host.CreateDefaultBuilder(args)
-
-        //    .ConfigureWebHostDefaults(webBuilder =>
-        //    {
-        //        webBuilder.UseStartup<Startup>();
-        //    });
 
         #endregion
 
@@ -119,13 +100,14 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             // run test logic
 
             // These aren't supported, if we don't do something about them, we'll get an exception.
-           // var removed = _services.RemoveSingletonOpenGenerics();
-            var childServices = _services.CreateChildServiceCollection(ParentSingletonOpenGenericResolutionBehaviour.Omit);
+            // var removed = _services.RemoveSingletonOpenGenerics();
+            var childServices = _services.CreateChildServiceCollection(ParentSingletonOpenGenericRegistrationsBehaviour.Omit);
             childServices.AddLogging();
 
             var childServiceProvider = childServices.BuildChildServiceProvider(_serviceProvider);
 
-            // verify that logging and options services work. These are failry fundamental.
+            // verify that logging and options services work within child container.
+            // These are fairly fundamental.
             var logger = childServiceProvider.GetRequiredService<ILogger<TestHostedService>>();
             var options = childServiceProvider.GetRequiredService<IOptions<TestOptions>>();
             Success = true;

@@ -12,16 +12,19 @@ Add the `Dazinator.Extensions.DependencyInjection.ChildContainers` package to yo
 
 ```cs
 
-    var parentServices = new ServiceCollection();
-    parentServices.AddTransient<LionService>();
+    var services = new ServiceCollection();
+    services.AddTransient<LionService>();
 
-    var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
-    childServices.AddTransient<LionService>(sp => new LionService() { SomeProperty = "child" }); // now configuring the child container.
+    var serviceProvider = services.BuildServiceProvider();
+    var childServiceProvider = services.CreateChildServiceProvider(serviceProvider, (childServices) =>
+    {
+        // configure extra child container services here..
+        childServices.AddTransient<LionService>(sp => new LionService() { SomeProperty = "child" });
+    });
 
-    var parentServiceProvider = parentServices.BuildServiceProvider();
-    var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+    
 
-    var parentService = parentServiceProvider.GetRequiredService<LionService>();
+    var parentService = serviceProvider.GetRequiredService<LionService>();
     var childService = childServiceProvider.GetRequiredService<LionService>();
 
     Assert.NotNull(parentService);
@@ -41,7 +44,6 @@ Child containers add some complexity to your solution, but the basic idea is thi
 2. If you do also register a service in the child container, it will override and registration that happens to be in the parent for that service.
 3. If you register a singleton in the parent level, it's the same instance when resolved from the child container - it's not magically a seperate singleton instance for the child container.
     - If you want a seperate singleton instance per child container, just add a a singleton registration when configuring the child container to override the parent registration.
-
 
 
 ## More Detail!
@@ -126,15 +128,13 @@ The ideal behaviour (and sadly one that does not currently work) would be that t
   // Singleton open generic registered only in parent container
   services.AddSingleton(typeof(IOptions<>), typeof(OptionsManager<T>));
 
-  var childServices = services.CreateChildServiceCollection(); // no additional registrations added to child container.
-  
-  var parentServiceProvider = services.BuildServiceProvider();
-  var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+  var serviceProvider = services.BuildServiceProvider();
+  var childServiceProvider = services.CreateChildServiceProvider(serviceProvider); // this will throw (by default) due to unsupported singleton open generic registration
 
   var instanceA = parentServiceProvider.GetRequiredService<IOptions<Program>>();
   var instanceB = childServiceProvider.GetRequiredService<IOptions<Program>>();
 
-  Assert.Same(instanceA,instanceB); // failse
+  Assert.Same(instanceA,instanceB); // your program won't actually reach this far as explained above will be an exception.
 
 ```
 
@@ -145,8 +145,10 @@ However there is no way to create an instance of an open generic type "in advanc
 .. and the only way to allow microsofts container to resolve such a request is to register the open generic in the container so that the container is responsible for creating the instance.
 ... and this means that there is no opportunity to get the container to resolve the same instance as the parent container. Both containers will create their own instances of the open generic type.
 
+More discussion found here: https://github.com/dotnet/runtime/issues/41050#issuecomment-698642970
+
 This may not be an issue for the majority of services, but it could be.
-Rather than silently exhibit potentially unexpected behaviour, I have decided by default to throw an exception when these registrations are encountered so that you can address this yourself in your application:
+Rather than silently exhibit potentially unexpected behaviour, I decided by default to throw an exception when these registrations are encountered so that you can address this yourself in your application:
 This is the exception you will see when attempting to build a child container and the parent has singleton open generic registrations:
 
 > Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider.GenericHostTests.Options_WorksInChildContainers(args: [""])
@@ -170,19 +172,21 @@ This is the exception you will see when attempting to build a child container an
     --- End of stack trace from previous location where exception was thrown ---
 
 
- How to workaround? You have some options. The `BuildChildServiceProvider()` method actually takes an additional enum argument `SingletonOpenGenericResolutionBehaviour`:
+ How to workaround? You have some options. Pass an enum by default to specify your desired workaround behavior:
+
+ ```csharp
+   var childServiceProvider = services.CreateChildServiceProvider(serviceProvider, (childServices) =>
+   {
+
+   }, ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
 
  ```
 
- var childServiceProvider = childServices.BuildChildServiceProvider(_serviceProvider, SingletonOpenGenericResolutionBehaviour.Omit);
+ The default if you don't specify this is `ThrowNotSupportedException' but here are the options:
 
  ```
 
- The default if you don't specify this is `ParentSingletonOpenGenericResolutionBehaviour.ThrowNotSupportedException' but here are the options:
-
- ```
-
-    public enum ParentSingletonOpenGenericResolutionBehaviour
+    public enum ParentSingletonOpenGenericRegistrationsBehaviour
     {
         /// <summary>
         /// If there are singleton open generic registerations in the parent container then an exception will be thrown when creating the child container. This is because there is currnetly no way to have the child container resolve the same instance of those as when resolved through the parent container. From the exception you can see a list of these unsupported registrations and then work out how to handle them.
@@ -191,13 +195,12 @@ This is the exception you will see when attempting to build a child container an
         /// <summary>
         /// If there are singleton open generic registerations in the parent container, they will also be registered again in the child container as seperate singletons. This means resolving an open generic type with the same type parameters in the parent and child container will yield two seperate instances of that service.
         /// </summary>
-        RegisterAgainAsSeperateSingletonInstancesInChildContainer = 1,
+        DuplicateSingletons = 1,
         /// <summary>
         /// If there are singleton open generic registerations in the parent container, they will be omitted from the child container. In other words you'll have to register them into the child container yourself otherwise they will fail to resolve from the child container.
         /// </summary>
         Omit = 2
     }
-
 
  ```
 

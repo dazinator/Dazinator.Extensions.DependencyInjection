@@ -6,7 +6,6 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
     using System.ComponentModel;
     using System.Linq;
     using Dazinator.Extensions.DependencyInjection.ChildContainers;
-    using Dazinator.Extensions.DependencyInjection.Tests.Child;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection.Extensions;
     using Xunit;
