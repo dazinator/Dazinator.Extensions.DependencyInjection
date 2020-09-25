@@ -50,7 +50,7 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
                     _descriptors.Add(item);
                 }
             }
-        }       
+        }
 
         /// <inheritdoc />
         public int Count => _descriptors.Count + Parent.Count;
