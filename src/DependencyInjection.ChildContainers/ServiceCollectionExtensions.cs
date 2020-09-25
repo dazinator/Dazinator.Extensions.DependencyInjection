@@ -18,7 +18,7 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <typeparam name="TService"></typeparam>
         /// <param name="services"></param>
         /// <returns></returns>
-        public static IChildServiceCollection CreateChildServiceCollection(this IServiceCollection services, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowNotSupportedException)
+        public static IChildServiceCollection CreateChildServiceCollection(this IServiceCollection services, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
         {
             var childServiceCollection = new ChildServiceCollection(services.ToImmutableList(), behaviour);
             return childServiceCollection;
@@ -30,7 +30,7 @@ namespace Dazinator.Extensions.DependencyInjection
         public static ServiceProvider CreateChildServiceProvider(
 #endif
 
-           this IServiceCollection parentServices, IServiceProvider parentServiceProvider, Action<IChildServiceCollection> configure, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowNotSupportedException)
+           this IServiceCollection parentServices, IServiceProvider parentServiceProvider, Action<IChildServiceCollection> configure, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
         {
             var childServices = parentServices.CreateChildServiceCollection(behaviour);
             configure?.Invoke(childServices);
@@ -44,7 +44,7 @@ namespace Dazinator.Extensions.DependencyInjection
         public static async Task<ServiceProvider> CreateChildServiceProviderAsync(
 #endif
 
-           this IServiceCollection parentServices, IServiceProvider parentServiceProvider, Func<IChildServiceCollection, Task> configureAsync, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowNotSupportedException)
+           this IServiceCollection parentServices, IServiceProvider parentServiceProvider, Func<IChildServiceCollection, Task> configureAsync, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
         {
             var childServices = parentServices.CreateChildServiceCollection(behaviour);
             if (configureAsync != null)
@@ -97,15 +97,16 @@ namespace Dazinator.Extensions.DependencyInjection
 
         }
 
-        private static void ThrowUnsupportedDescriptors(List<ServiceDescriptor> unsupportedDescriptors)
+        private static void ThrowUnsupportedDescriptors(IEnumerable<ServiceDescriptor> unsupportedDescriptors)
         {
             var typesMessageBuilder = new StringBuilder();
             foreach (var item in unsupportedDescriptors)
             {
-                typesMessageBuilder.AppendLine($"ServiceType: {item.ServiceType.FullName}");
+                typesMessageBuilder.AppendLine($"ServiceType: {item.ServiceType.FullName}, ImplementationType: {item.ImplementationType?.FullName ?? " "}");
             }
-            throw new NotSupportedException("Open generic types registered as singletons in the parent container are not supported when using child containers: " + Environment.NewLine + typesMessageBuilder.ToString());
+            throw new NotSupportedException("Open generic types registered as singletons in the parent container are not supported when using microsoft service provider for child containers: " + Environment.NewLine + typesMessageBuilder.ToString());
         }
+
 
         private static ServiceDescriptor CreateChildDescriptorForExternalService(ServiceDescriptor item, IServiceProvider parentServiceProvider, List<ServiceDescriptor> unsupportedDescriptors, ParentSingletonOpenGenericRegistrationsBehaviour singletonOpenGenericBehaviour)
         {
@@ -137,15 +138,16 @@ namespace Dazinator.Extensions.DependencyInjection
                 return serviceDescriptor;
             }
 
-            // These incompatible services shoul dhave already been filtered out of the child service collection based on its behaviour constructor arg..
+            // These incompatible services should have already been filtered out of the child service collection based on its behaviour constructor arg..
             // so we shouldn't hit this.
-            if (singletonOpenGenericBehaviour != ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)
+            if (singletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)
             {
-                throw new NotSupportedException("Parent singleton open generic registrations are not supported");
+                // allow the open generic singleton registration to be added again to this child again resulting in additional singleton instance at child scope.
+                return item;
             }
 
-            // allow the open generic singleton registration to be added again to this child again resulting in additional singleton instance at child scope.
-            return item;
+            unsupportedDescriptors.Add(item);
+            return null;
 
             // oh flip
             // e.g IOptions<T>

@@ -46,7 +46,8 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
 
             var childServiceProvider = services.CreateChildServiceProvider(serviceProvider, (childServices) =>
             {
-                // don't add any additional child registrations. so IConfiguration is purely in parent scope.
+
+                
             }, ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
 
             //   https://github.com/dotnet/runtime/blob/6072e4d3a7a2a1493f514cdf4be75a3d56580e84/src/libraries/Microsoft.Extensions.Logging.Configuration/src/LoggerProviderConfiguration.cs#L10
