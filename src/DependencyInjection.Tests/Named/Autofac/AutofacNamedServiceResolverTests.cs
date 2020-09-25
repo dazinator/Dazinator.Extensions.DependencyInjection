@@ -34,7 +34,6 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named.Autofac
             containerBuilder.Populate(services);
             var container = containerBuilder.Build();
             var sp = new AutofacServiceProvider(container);
-            sp.LifetimeScope
             return sp;
         }
 
