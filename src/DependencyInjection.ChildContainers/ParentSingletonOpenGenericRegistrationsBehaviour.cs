@@ -13,7 +13,7 @@ namespace Dazinator.Extensions.DependencyInjection
         /// </summary>
         DuplicateSingletons = 1,
         /// <summary>
-        /// If there are singleton open generic registerations in the parent container, they will be omitted from the child container. In other words you'll have to register them into the child container yourself otherwise they will fail to resolve from the child container.
+        /// If there are singleton open generic registerations in the parent container, they will be omitted from the child container. In other words you won't be able to resolve these services from the built child container.
         /// </summary>
         Omit = 2
     }

@@ -8,6 +8,8 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
     using System.Text;
     using Microsoft.Extensions.DependencyInjection;
 
+
+
     /// <summary>
     /// An implementation of <see cref="IServiceCollection"/> that provides a unified view of <see cref="ServiceDescriptor"/> in a parent <see cref="IServiceCollection"/> in addition to those added directly to the child <see cref="ChildServiceCollection"/> itself. You can access all the descriptors as if it was a single collection, however you can also get only the descriptors added to the child collection which is helpful for configuring child containers.
     /// </summary>
@@ -16,41 +18,9 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
 
         private readonly List<ServiceDescriptor> _descriptors = new List<ServiceDescriptor>();
 
-        public ChildServiceCollection(IReadOnlyList<ServiceDescriptor> parent, ParentSingletonOpenGenericRegistrationsBehaviour singletonOpenGenericBehaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
-        {
-            Parent = parent;
-            SingletonOpenGenericBehaviour = singletonOpenGenericBehaviour;
+        public ChildServiceCollection(IReadOnlyList<ServiceDescriptor> parent) => Parent = parent;
 
-            var singletonOpenGenerics = Parent.Where(a => (a.Lifetime == ServiceLifetime.Singleton && !a.ServiceType.IsClosedType())).ToArray();
-
-
-            if (SingletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.Omit)
-            {
-
-                // By ommitting them from the parent services they won't be found by any AddXyz() when registering services at child level
-                // and can therefore be re-added at child level (resulting in a new singleton) by the user if desired. If they don't do this, those service won't be included / resolvable in the child container.
-                if (singletonOpenGenerics.Any())
-                {
-                    // filter out singleton open generics from parent if thats the behaviour.
-                    Parent = Parent.Except(singletonOpenGenerics).ToImmutableArray();
-                }
-            }
-            else if (SingletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
-            {
-                // Let the underlying container throw the unsupported exception if it doesn't support them.
-                //if (singletonOpenGenerics.Any())
-                //{
-                //    ThrowUnsupportedDescriptors(singletonOpenGenerics);
-                //}
-            }
-            else if (SingletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)
-            {
-                foreach (var item in singletonOpenGenerics)
-                {
-                    _descriptors.Add(item);
-                }
-            }
-        }
+        public ChildServiceCollection(IReadOnlyList<ServiceDescriptor> parent, IEnumerable<ServiceDescriptor> childDescriptors) : this(parent) => _descriptors.AddRange(childDescriptors);
 
         /// <inheritdoc />
         public int Count => _descriptors.Count + Parent.Count;
@@ -58,8 +28,7 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
         /// <inheritdoc />
         public bool IsReadOnly => false;
 
-        public IReadOnlyList<ServiceDescriptor> Parent { get; }
-        public ParentSingletonOpenGenericRegistrationsBehaviour SingletonOpenGenericBehaviour { get; private set; }
+        public IReadOnlyList<ServiceDescriptor> Parent { get; private set; }
 
         /// <inheritdoc />
         public ServiceDescriptor this[int index]
@@ -188,5 +157,58 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
         public IEnumerable<ServiceDescriptor> ChildDescriptors => _descriptors;
         public IEnumerable<ServiceDescriptor> ParentDescriptors => Parent;
 
+        public IChildServiceCollection ConfigureServices(Action<IServiceCollection> configureServices)
+        {
+            configureServices?.Invoke(this);
+            return this;
+        }
+
+        #region Methods that modi parent services return a new collection
+
+        /// <summary>
+        /// Calls to <see cref="Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAdd"/> within the <paramref name="configureServices"/> will not be prevented from succeeding if descriptors for the same service exist in parent services matching the predicate.
+        /// If any such "duplicate" descriptors are added, they are then removed from the parent level service descriptors (so only will exist at child level) in the returned <see cref="IChildServiceCollection"/>.
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <param name="configureServices"></param>
+        /// <returns></returns>
+        public IChildServiceCollection AutoPromoteChildDuplicates(Func<ServiceDescriptor, bool> predicate,
+                       Action<IChildServiceCollection> configureServices, Func<ServiceDescriptor, bool> promotePredicate = null)
+        {
+
+            var toExclude = this.Parent.Where(predicate).ToArray(); // allows TryAdd() to succeed where it wouldn't have previously.
+            var filteredParent = this.Parent.Except(toExclude).ToImmutableList();
+            var concatParent = filteredParent.Concat(ChildDescriptors).ToImmutableList();
+
+            var newlyAddedColl = new ChildServiceCollection(concatParent);
+            configureServices(newlyAddedColl);
+            var added = newlyAddedColl.ChildDescriptors;
+
+            var newChildDescripors = _descriptors.Concat(added);
+
+            // Remove the services from the parent that have been promoted to the child.
+            var promoted = toExclude.Join(added, (i) => i.ServiceType, o => o.ServiceType, (a, b) => a)
+                                    .Where(a => promotePredicate == null ? true : promotePredicate(a)).ToArray();
+
+            var newParent = this.Parent.Except(promoted).ToImmutableList();
+            return new ChildServiceCollection(newParent, newChildDescripors);
+        }
+
+        /// <summary>
+        /// Removes parent level <see cref="ServiceDescriptor"/> that match the predicate,
+        /// </summary>
+        /// <remarks>When building child containers backed by <see cref="ServiceProvider"/></remarks> this is often a necessary step for any parent level "singleton open generic" registrations
+        /// because they can't currently be resolved from a child container to an existing parent instance, 
+        /// and so have to be registered as seperate instances in the child, or omitted / removed.
+        public IChildServiceCollection RemoveParentDescriptors(Func<ServiceDescriptor, bool> parentFilterPredicate)
+        {
+            var toRemove = this.Parent.Where(parentFilterPredicate);
+            var newParent = this.Parent.Except(toRemove).ToImmutableList();
+            return new ChildServiceCollection(newParent, _descriptors);
+        }
+
+        public IChildServiceCollection RemoveParentDescriptors(Type serviceType) => RemoveParentDescriptors(a => a.ServiceType == serviceType);
+
+        #endregion
     }
 }

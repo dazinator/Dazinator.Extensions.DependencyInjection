@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DependencyInjection.ChildCo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DependencyInjection.Tests", "DependencyInjection.Tests\DependencyInjection.Tests.csproj", "{BB2EB432-B337-4CD4-BBBD-2B8B299DFC81}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.ChildContainers.RazorPages", "Sample.RazorPages\Sample.ChildContainers.RazorPages.csproj", "{2AC3041F-8AE9-4BD6-AC2D-6A35AA8DE271}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +39,10 @@ Global
 		{BB2EB432-B337-4CD4-BBBD-2B8B299DFC81}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB2EB432-B337-4CD4-BBBD-2B8B299DFC81}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BB2EB432-B337-4CD4-BBBD-2B8B299DFC81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AC3041F-8AE9-4BD6-AC2D-6A35AA8DE271}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AC3041F-8AE9-4BD6-AC2D-6A35AA8DE271}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AC3041F-8AE9-4BD6-AC2D-6A35AA8DE271}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AC3041F-8AE9-4BD6-AC2D-6A35AA8DE271}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

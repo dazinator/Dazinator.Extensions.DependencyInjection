@@ -5,6 +5,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
     using System.Linq;
     using Dazinator.Extensions.DependencyInjection.ChildContainers;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.DependencyInjection.Extensions;
     using Xunit;
 
     public class ChildServiceCollectionTests
@@ -462,6 +463,59 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 Assert.Contains(children, (i) => i.ServiceType == item);
             }
         }
+
+
+        [Fact]
+        public void AutoPromote_AllowsDuplicatedDescriptorsToBe_PromotedToChildOnlyLevel()
+        {
+
+            // In this scenario, a service is registered in the parent,
+            // and we pretend we have an external AddXyz() method we want to call on the child IServiceCollection,
+            // and that AddXyz() has some logic that will TryAdd() to add the same service descriptor.
+            // because the service descriptor has already been added at parent level this would shouldy result in a duplicate NOT
+            // being added as the TryAdd() will fail at child level as the child sees ALL of the parent registrations.
+            // Therefore we allow the user to filter the parent registrations from view, so that AddXyz doesn't see any registrations
+            // at parent level, and therefore adds all of its services again at parent level.
+
+            var parentServiceCollection = new ServiceCollection();
+            parentServiceCollection.AddSingleton<LionService>();
+            parentServiceCollection.AddTransient<AnimalService>();
+
+            Assert.Equal(2, parentServiceCollection.Count);
+
+
+            IChildServiceCollection sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            Assert.Equal(2, sut.Count);
+            Assert.Equal(2, sut.ParentDescriptors.Count());
+            Assert.Empty(sut.ChildDescriptors);
+
+            // demonstrates the issue - this will not add any service because the service descriptor already visible at parent level,
+            sut.TryAddSingleton<LionService>();
+            Assert.Equal(2, sut.Count);
+            Assert.Equal(2, sut.ParentDescriptors.Count());
+            Assert.Empty(sut.ChildDescriptors);
+
+            // Within the action below, we are hiding parent level service descriptors that match the predicate,
+            // vausing them to be added again by TryAdd()
+            sut = sut.AutoPromoteChildDuplicates(a => a.IsSingleton(), (nested) =>
+             {
+                 // Singleton LionService should be hidden, so TryAdd() calls should succeed
+                 Assert.Single(nested);
+                 Assert.Single(nested.ParentDescriptors);
+                 Assert.Empty(nested.ChildDescriptors);
+
+                 nested.TryAddSingleton<LionService>();
+                 Assert.Equal(2, nested.Count);
+                 Assert.Single(nested.ParentDescriptors);
+                 Assert.Single(nested.ChildDescriptors);
+             });
+
+            // The duplicated service descriptor should no longer be in the parent services, only in child services - it has been promoted.
+            Assert.Equal(2, sut.Count);
+            Assert.Single(sut.ParentDescriptors);
+            Assert.Single(sut.ChildDescriptors);
+        }
+
     }
 
 

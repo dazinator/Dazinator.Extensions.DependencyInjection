@@ -7,6 +7,7 @@
     <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+   <DefaultNetCoreTargetFramework>netcoreapp3.1</DefaultNetCoreTargetFramework>
  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0">
@@ -16,4 +17,3 @@
   </ItemGroup>
 </Project>
    
-  

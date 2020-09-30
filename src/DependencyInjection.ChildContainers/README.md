@@ -9,6 +9,7 @@ Please Note: You can also refer to the unit tests.
 
 Add the `Dazinator.Extensions.DependencyInjection.ChildContainers` package to your project.
 
+Note: This project is still in pre-release and the api's below subject to change:
 
 ```cs
 
@@ -16,13 +17,9 @@ Add the `Dazinator.Extensions.DependencyInjection.ChildContainers` package to yo
     services.AddTransient<LionService>();
 
     var serviceProvider = services.BuildServiceProvider();
-    var childServiceProvider = services.CreateChildServiceProvider(serviceProvider, (childServices) =>
-    {
-        // configure extra child container services here..
-        childServices.AddTransient<LionService>(sp => new LionService() { SomeProperty = "child" });
-    });
-
-    
+    var childServiceProvider = services.CreateChildServiceCollection()
+                                       .ConfigureServices(child=>childServices.AddTransient<LionService>(sp => new LionService() { SomeProperty = "child" }))
+                                       .BuildChildServiceProvider(appServices);    
 
     var parentService = serviceProvider.GetRequiredService<LionService>();
     var childService = childServiceProvider.GetRequiredService<LionService>();
@@ -129,7 +126,7 @@ The ideal behaviour (and sadly one that does not currently work) would be that t
   services.AddSingleton(typeof(IOptions<>), typeof(OptionsManager<T>));
 
   var serviceProvider = services.BuildServiceProvider();
-  var childServiceProvider = services.CreateChildServiceProvider(serviceProvider); // this will throw (by default) due to unsupported singleton open generic registration
+  var childServiceProvider = BuildChildServiceProvider(serviceProvider); // this will throw (by default) due to unsupported singleton open generic registration
 
   var instanceA = parentServiceProvider.GetRequiredService<IOptions<Program>>();
   var instanceB = childServiceProvider.GetRequiredService<IOptions<Program>>();
@@ -170,41 +167,21 @@ This is the exception you will see when attempting to build a child container an
     --- End of stack trace from previous location where exception was thrown ---
 
 
- How to workaround? You have the option to pass an enum to specify your desired workaround behavior:
+ How to workaround? Note the call to `AutoPromoteChildDuplicates()`
 
- ```csharp
-   var childServiceProvider = services.CreateChildServiceProvider(serviceProvider, (childServices) =>
-   {
-
-   }, ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
+ ```
+   ChildContainer = Services.CreateChildServiceCollection()
+                                         .AutoPromoteChildDuplicates(d => d.IsSingletonOpenGeneric(),
+                                                                  (child) => child.AddOptions())
+                                         .BuildChildServiceProvider(appServices);
 
  ```
 
- The default if you don't specify this is `ThrowNotSupportedException' but here are the options:
-
- ```
-
-    public enum ParentSingletonOpenGenericRegistrationsBehaviour
-    {
-        /// <summary>
-        /// If there are singleton open generic registerations in the parent container then an exception will be thrown when creating the child container. This is because there is currnetly no way to have the child container resolve the same instance of those as when resolved through the parent container. From the exception you can see a list of these unsupported registrations and then work out how to handle them.
-        /// </summary>
-        ThrowNotSupportedException = 0,
-        /// <summary>
-        /// If there are singleton open generic registerations in the parent container, they will also be registered again in the child container as seperate singletons. This means resolving an open generic type with the same type parameters in the parent and child container will yield two seperate instances of that service.
-        /// </summary>
-        DuplicateSingletons = 1,
-        /// <summary>
-        /// If there are singleton open generic registerations in the parent container, they will be omitted from the child container. In other words you'll have to register them into the child container yourself otherwise they will fail to resolve from the child container.
-        /// </summary>
-        Omit = 2
-    }
-
- ```
+ This wraps your child registrations, and notices any Singleton Open Generics (due to the predicate provded) that you register at child level,
+ and if any of those services also exist at parent level, it removes those from the parent level descriptors in the returned IChildServiceCollection. 
+ This basically means, as long as you "re-register" at child level all of the singleton open generic services, you won't get the exception when you build the container becuase you have effectively
+ decided to register seperate "child level singletons" for all such services. If you miss any you will still get the exception for the ones you missed, allowing you to address the issue on a case by case basis.
 
  There is no perfect solution here, hopefull the enum comments above are sufficient to explain your options.
-
- The "safest" option in my view, is to probably go for "omit" and then don't rely on the open generics feature to satisfy service resolutions in your child containers. 
- `DuplicateSingletons` should be used with caution as it may cause particular services not to behave as desired.
 
  If anyone has any bright ideas for a solution to this problem I am all ears.
