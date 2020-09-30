@@ -18,7 +18,7 @@ Note: This project is still in pre-release and the api's below subject to change
 
     var serviceProvider = services.BuildServiceProvider();
     var childServiceProvider = services.CreateChildServiceCollection()
-                                       .ConfigureServices(child=>childServices.AddTransient<LionService>(sp => new LionService() { SomeProperty = "child" }))
+                                       .ConfigureServices(child=>child.AddTransient<LionService>(sp => new LionService() { SomeProperty = "child" }))
                                        .BuildChildServiceProvider(appServices);    
 
     var parentService = serviceProvider.GetRequiredService<LionService>();
