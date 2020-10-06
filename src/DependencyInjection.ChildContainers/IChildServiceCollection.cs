@@ -31,6 +31,6 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
         /// </summary>
         /// <returns></returns>
         IChildServiceCollection ConfigureServices(Action<IServiceCollection> configureServices);
-        
+
     }
 }

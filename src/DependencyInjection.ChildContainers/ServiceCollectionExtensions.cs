@@ -145,7 +145,7 @@ namespace Dazinator.Extensions.DependencyInjection
                 return item;
             }
 
-            if(singletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.Omit)
+            if (singletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.Omit)
             {
                 // don't include this parent level service in child container.
                 return null;

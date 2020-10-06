@@ -1,4 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Dazinator.Extensions.DependencyInjection;
+using Dazinator.Extensions.DependencyInjection.ChildContainers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -8,16 +14,10 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using Dazinator.Extensions.DependencyInjection.ChildContainers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Sample.RazorPages
 {
@@ -75,7 +75,7 @@ namespace Sample.RazorPages
                 HostLifetime = appServices.GetRequiredService<IHostApplicationLifetime>();
 
                 ChildContainer = Services.CreateChildServiceCollection()
-                                         .ConfigureServices(child=>child.AddOptions())
+                                         .ConfigureServices(child => child.AddOptions())
                                          .AutoPromoteChildDuplicates(d => d.IsSingletonOpenGeneric(),
                                                                   (child) => ConfigureChildServices(child, builder))
                                       .BuildChildServiceProvider(appServices);

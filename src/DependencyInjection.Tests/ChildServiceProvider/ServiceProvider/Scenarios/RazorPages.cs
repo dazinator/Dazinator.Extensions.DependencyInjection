@@ -15,7 +15,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
 
 
             var services = new ServiceCollection();
-           // services.AddOptions();
+            // services.AddOptions();
 
 
             var serviceProvider = services.BuildServiceProvider();
