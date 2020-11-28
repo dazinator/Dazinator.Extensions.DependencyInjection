@@ -68,17 +68,17 @@ Tests are in place to verify these behaviours.
 
 ## Services registered just in child
 - [x] Can not be resolved from parent
-- [x] Can have dependencies resolved from parent registrations
-    - [x] If the dependency is scoped or transient, it will be owned by the container its resolved in (so child in this case)
-    - [x] if the dependency is singleton, it will remain owned by the parent container (or user if its a registered instance)
+- [x] Can have dependencies satisfied from parent registrations
+    - [x] If such a dependency is scoped or transient, it will be created / "owned" by the child container through which the service is resolved.
+    - [x] if such a dependency is singleton, it will remain owned by the parent container (or caller if the singleton dependency was registered as an existing instance)
 
 ## Services registered in parent and in child
 - [x] parent resolution should get service registered with parent.
 - [x] child resolution should get service registered with child and not the service registered with parent (it overrides parent registration)
-    - [x] This means you always get two different instances, unless the user has registered a singleton instance, or is registering factory functions that capture shared instances.
+    - [x] This means you always get two different instances, unless the user has registered a singleton instance, or is registering factory functions that do funny lifetime stuff via capturing shared instances.
  - [x] IEnumerable<Service>` resolution in parent should only return services from parent registrations.
- - [x] IEnumerable<Service>` resolution in child should return services from parent and child registrations (concatenated)
-     - This does mean its not possible to directly "replace" a service registered in the parent, by registering it again in the child, when resolving IEnumerable<TService>() - as both will be included in the IEnumerable. Registering a service in a child container only overrides the parent registration when resolving the type, not an IEnumerable of that type.
+ - [x] IEnumerable<Service>` resolution in child should return services from parent and child registrations (concatenation of both)
+     - This does mean its not possible to directly "replace" a service registered in the parent, by registering it again in the child, when its resolved as IEnumerable<TService>() - as both (the concatenation) will be included in the IEnumerable. Registering a service in a child container only overrides the parent registration when resolving an instance of the type, not an IEnumerable of instances for the type.
 
 
 ## Notes on Overriding services
