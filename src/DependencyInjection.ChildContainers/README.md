@@ -64,7 +64,7 @@ Tests are in place to verify these behaviours.
     - [x] `transient` or `scoped` services, should be created by the container they are resolved through.
         - [x] and therefore, tracked / disposed by that container if they are IDisposable
         - [x] can have dependencies satisfied by that container (e.g can register a dependency in the child container which overrides the dependency (or lack of) in the parent container when resolving the service through child container)
-    - [x] `singleton` services should be created in parent container. We don't want child container to create seperate instances (the user would have to register the service as a singleton in the child container to configure that explicitly)
+    - [x] `singleton` services should be created in parent container. We don't want child container to create seperate instances (the user would have to register the service as a singleton in the child container to "opt in" to a new singleton at child level explicitly)
 
 ## Services registered just in child
 - [x] Can not be resolved from parent
