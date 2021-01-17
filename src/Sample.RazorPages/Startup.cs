@@ -18,6 +18,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Configuration;
 using Microsoft.Extensions.Options;
+using Sample.ChildContainers.RazorPages.MvcInternal;
 
 namespace Sample.RazorPages
 {
@@ -115,6 +116,10 @@ namespace Sample.RazorPages
             {
                 o.RootDirectory = $"/Child";
             });
+
+            services.AddSingleton<PageLoader, DefaultPageLoader>();
+            services.AddSingleton<ActionEndpointFactory>();
+            
 
             services.AddSingleton<RequestDelegate>(sp =>
             {
