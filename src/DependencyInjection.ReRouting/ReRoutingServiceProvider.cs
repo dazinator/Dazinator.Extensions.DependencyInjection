@@ -71,20 +71,13 @@ namespace Dazinator.Extensions.DependencyInjection
 
 
             // A
-            // i)
-            if (!_hasOpenGenericTypes)
+            // i and ii)
+            if (!_hasOpenGenericTypes || !serviceType.IsGenericType)
             {
                 var sp = LookupServiceProvider(serviceType);
                 return sp.GetService(serviceType);
                 //return Resolve(serviceType);
-            }
-
-            // ii)
-            if (!serviceType.IsGenericType)
-            {
-                var sp = LookupServiceProvider(serviceType);
-                return sp.GetService(serviceType);
-            }
+            }          
 
             // B)
 
@@ -99,7 +92,6 @@ namespace Dazinator.Extensions.DependencyInjection
             if (_openGenericTypeMappingCache.TryGetValue(serviceType, out mappedSp))
             {
                 return mappedSp.GetService(serviceType);
-                //return Resolve(mappedOpenGenericType);
             }
 
             // i)
