@@ -15,6 +15,10 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <summary>
         /// If there are singleton open generic registerations in the parent container, they will be omitted from the child container. In other words you won't be able to resolve these services from the built child container.
         /// </summary>
-        Omit = 2
+        Omit = 2,
+        /// <summary>
+        /// If there are singleton open generic registerations in the parent container, requests to the child container for concrete instances of those service types will be delegated to the parent container. This involves a runtime dictionary lookup when services are resolved so may introduce a small performance decrement.
+        /// </summary>
+        Delegate = 3
     }
 }

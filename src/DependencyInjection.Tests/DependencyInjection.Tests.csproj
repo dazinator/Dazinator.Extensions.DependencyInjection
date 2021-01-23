@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DependencyInjection.ChildContainers\DependencyInjection.ChildContainers.csproj" />
     <ProjectReference Include="..\DependencyInjection.NamedServices\DependencyInjection.NamedServices.csproj" />
+    <ProjectReference Include="..\DependencyInjection.ReRouting\DependencyInjection.ReRouting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

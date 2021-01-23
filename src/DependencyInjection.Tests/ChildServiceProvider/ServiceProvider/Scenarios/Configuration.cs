@@ -173,7 +173,10 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             Assert.Equal("changed", childConfig["InheritedFromParent"]);
 
             // verify when disposing child containers, parent config still works
-            childServiceProvider.Dispose();
+            if (childServiceProvider is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
 
 
             Assert.Equal("Parent", parentConfig["Level"]); // can still use.

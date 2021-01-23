@@ -27,7 +27,7 @@ namespace Dazinator.Extensions.DependencyInjection
 #if NETSTANDARD1_3
         public static IServiceProvider CreateChildServiceProvider(
 #else
-        public static ServiceProvider CreateChildServiceProvider(
+        public static IServiceProvider CreateChildServiceProvider(
 #endif
 
            this IServiceCollection parentServices, IServiceProvider parentServiceProvider, Action<IChildServiceCollection> configure, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
@@ -41,7 +41,7 @@ namespace Dazinator.Extensions.DependencyInjection
 #if NETSTANDARD1_3
         public static async Task<IServiceProvider> CreateChildServiceProviderAsync(
 #else
-        public static async Task<ServiceProvider> CreateChildServiceProviderAsync(
+        public static async Task<IServiceProvider> CreateChildServiceProviderAsync(
 #endif
 
            this IServiceCollection parentServices, IServiceProvider parentServiceProvider, Func<IChildServiceCollection, Task> configureAsync, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
@@ -58,10 +58,10 @@ namespace Dazinator.Extensions.DependencyInjection
 #if NETSTANDARD1_3
         public static IServiceProvider BuildChildServiceProvider(
 #else
-        public static ServiceProvider BuildChildServiceProvider(
+        public static IServiceProvider BuildChildServiceProvider(
 #endif
 
-           this IChildServiceCollection childServiceCollection, IServiceProvider parentServiceProvider, ParentSingletonOpenGenericRegistrationsBehaviour singletonOpenGenericBehaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
+           this IChildServiceCollection childServiceCollection, IServiceProvider parentServiceProvider, ParentSingletonOpenGenericRegistrationsBehaviour singletonOpenGenericBehaviour = ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)
         {
             // add all the same registrations that are in the parent to the child,
             // but rewrite them to resolve from the parent IServiceProvider.
@@ -81,7 +81,10 @@ namespace Dazinator.Extensions.DependencyInjection
 
             if (unsupportedDescriptors.Any())
             {
-                ThrowUnsupportedDescriptors(unsupportedDescriptors);
+                if (singletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
+                {
+                    ThrowUnsupportedDescriptors(unsupportedDescriptors);
+                }
             }
 
             // Child service descriptors can be added "as-is"
@@ -90,8 +93,20 @@ namespace Dazinator.Extensions.DependencyInjection
                 reWrittenServiceCollection.Add(item);
             }
 
-            var sp = reWrittenServiceCollection.BuildServiceProvider();
-            return sp;
+            if (singletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)
+            {
+                var childSp = reWrittenServiceCollection.BuildServiceProvider();
+                var routingSp = new ReRoutingServiceProvider(childSp);
+                routingSp.ReRoute(parentServiceProvider, unsupportedDescriptors.Select(a => a.ServiceType));
+                return routingSp;
+            }
+            else
+            {
+                var sp = reWrittenServiceCollection.BuildServiceProvider();
+                return sp;
+            }
+
+
 
         }
 
@@ -131,6 +146,9 @@ namespace Dazinator.Extensions.DependencyInjection
             if (item.ServiceType.IsClosedType())
             {
                 // oh goodie
+                // get an instance of the singleton from the parent container - so its owned by the parent.
+                // then register this instance as an externally owned instance in this child container.
+                // child container won't then try and own it.                
                 var singletonInstance = parentServiceProvider.GetRequiredService(item.ServiceType);
                 var serviceDescriptor = new ServiceDescriptor(item.ServiceType, singletonInstance); // by providing the instance, the child container won't manage this object instances lifetime (i.e call Dispose if its IDisposable).
                 return serviceDescriptor;
@@ -147,7 +165,7 @@ namespace Dazinator.Extensions.DependencyInjection
 
             if (singletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.Omit)
             {
-                // don't include this parent level service in child container.
+                // exclude this service from the child container. It won't be able to be resolved from child container.
                 return null;
             }
 
