@@ -83,6 +83,8 @@ namespace Dazinator.Extensions.DependencyInjection
 
             // ii a)
             //todo: combine the followng two caches so we only do one lookup?
+            // tradeoff in favour of seperate immutable caches growing independently could avoid
+            // stale cache overwrites in some cases 
             IServiceProvider mappedSp;
             if (_excludedGenericTypesCache.TryGetValue(serviceType, out mappedSp))
             {
