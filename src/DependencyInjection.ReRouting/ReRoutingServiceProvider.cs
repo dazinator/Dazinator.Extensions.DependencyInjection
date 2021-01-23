@@ -82,6 +82,7 @@ namespace Dazinator.Extensions.DependencyInjection
             // B)
 
             // ii a)
+            //todo: combine the followng two caches so we only do one lookup?
             IServiceProvider mappedSp;
             if (_excludedGenericTypesCache.TryGetValue(serviceType, out mappedSp))
             {
