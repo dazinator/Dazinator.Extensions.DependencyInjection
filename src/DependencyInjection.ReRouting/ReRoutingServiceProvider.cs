@@ -18,8 +18,6 @@ namespace Dazinator.Extensions.DependencyInjection
 
         private ImmutableDictionary<Type, IServiceProvider> _openGenericTypeMappingCache = ImmutableDictionary<Type, IServiceProvider>.Empty;
 
-        private ImmutableDictionary<Type, IServiceProvider> _excludedGenericTypesCache = ImmutableDictionary<Type, IServiceProvider>.Empty;
-
         private bool _hasOpenGenericTypes = false;
 
         public ReRoutingServiceProvider(IServiceProvider defaultServiceProvider)
@@ -64,9 +62,9 @@ namespace Dazinator.Extensions.DependencyInjection
             //   - B) If it is generic,
             //       i) work out if it relates to an open generic registration.
             //       ii) above case takes a lot of work, so keep a cache for
-            //         a) generic types we've already checked and found don't relate to open generic type registrations - so we can skip this check in future.
-            //         b) generic types we've already checked, and found do relate to open generic type registrations - so we can short cut to the previously ascertained answer.
-            //             *)  Don't lock for cache updates - prefer a cache miss, cache should slowly grow to prevent cache misses in future concurrent cases.
+            //         a) generic types we've already checked and found don't need to be forwarded to an open type registration route - so we can skip this check in future.
+            //         b) generic types we've already checked, and found do need to be forwarded to an open generic type registrations - so we can short cut to the previously ascertained answer.
+            //          *)  Don't lock for cache updates - prefer a cache miss, cache should slowly grow to prevent cache misses in future concurrent cases.
             //   
 
 
@@ -79,20 +77,8 @@ namespace Dazinator.Extensions.DependencyInjection
                 //return Resolve(serviceType);
             }          
 
-            // B)
-
-            // ii a)
-            //todo: combine the followng two caches so we only do one lookup?
-            // tradeoff in favour of seperate immutable caches growing independently could avoid
-            // stale cache overwrites in some cases 
-            IServiceProvider mappedSp;
-            if (_excludedGenericTypesCache.TryGetValue(serviceType, out mappedSp))
-            {
-                return mappedSp.GetService(serviceType);
-            }
-
-            // ii b)
-            if (_openGenericTypeMappingCache.TryGetValue(serviceType, out mappedSp))
+            // ii a & b)
+            if (_openGenericTypeMappingCache.TryGetValue(serviceType, out var mappedSp))
             {
                 return mappedSp.GetService(serviceType);
             }
@@ -103,15 +89,15 @@ namespace Dazinator.Extensions.DependencyInjection
                 if (serviceType.IsAssignableToGenericType(item))
                 {
                     var sp = _routes[item];
-                    // ii b *)
+                    // *)
                     _openGenericTypeMappingCache = _openGenericTypeMappingCache.SetItem(serviceType, sp);
                     return sp.GetService(serviceType);
                 }
             }
 
-            // ii a *))
+            // *)
             mappedSp = LookupServiceProvider(serviceType);
-            _excludedGenericTypesCache = _excludedGenericTypesCache.Add(serviceType, mappedSp);
+            _openGenericTypeMappingCache = _openGenericTypeMappingCache.Add(serviceType, mappedSp);
             return mappedSp.GetService(serviceType);
         }
 
