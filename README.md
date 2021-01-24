@@ -7,14 +7,16 @@
 | ------------- | --- | --- |
 | Dazinator.Extensions.DependencyInjection.NamedServices  | [![Dazinator.Extensions.DependencyInjection.NamedServices](https://img.shields.io/nuget/v/Dazinator.Extensions.DependencyInjection.NamedServices.svg)](https://www.nuget.org/packages/Dazinator.Extensions.DependencyInjection.NamedServices/) | [![Dazinator.Extensions.DependencyInjection.NamedServices](https://img.shields.io/nuget/vpre/Dazinator.Extensions.DependencyInjection.NamedServices.svg)](https://www.nuget.org/packages/Dazinator.Extensions.DependencyInjection.NamedServices/) | 
 | Dazinator.Extensions.DependencyInjection.ChildContainers  | [![Dazinator.Extensions.DependencyInjection.ChildContainers](https://img.shields.io/nuget/v/Dazinator.Extensions.DependencyInjection.ChildContainers.svg)](https://www.nuget.org/packages/Dazinator.Extensions.DependencyInjection.ChildContainers/) | [![Dazinator.Extensions.DependencyInjection.ChildContainers](https://img.shields.io/nuget/vpre/Dazinator.Extensions.DependencyInjection.ChildContainers.svg)](https://www.nuget.org/packages/Dazinator.Extensions.DependencyInjection.ChildContainers/) | 
-| Dazinator.Extensions.DependencyInjection.ChildContainers.Microsoft
+| Dazinator.Extensions.DependencyInjection.Microsoft | [![Dazinator.Extensions.DependencyInjection.Microsoft](https://img.shields.io/nuget/v/Dazinator.Extensions.DependencyInjection.Microsoft.svg)](https://www.nuget.org/packages/Dazinator.Extensions.DependencyInjection.Microsoft/) | [![Dazinator.Extensions.DependencyInjection.Microsoft](https://img.shields.io/nuget/vpre/Dazinator.Extensions.DependencyInjection.Microsoft.svg)](https://www.nuget.org/packages/Dazinator.Extensions.DependencyInjection.Microsoft/) | 
 
 ## Intro
 
-This repository builds on `Microsoft.Extensions.DependencyInjection` to provide additional features, which currently are:
+This repository builds on `Microsoft.Extensions.DependencyInjection.Abstractions` to provide additional features, which currently are:
 
 - Named Services
 - Child Containers
+
+It also provides a seperate nuget package called `Dazinator.Extensions.DependencyInjection.Microsoft` which basically contains a copy of the native MS `ServiceProvider` but with some changes as published here: https://github.com/dotnet/runtime/issues/45497
 
 ## Named Services
 
@@ -26,11 +28,10 @@ For more detailed docs [see here](./src/DependencyInjection.NamedServices/README
 
 For more detailed docs [see here](./src/DependencyInjection.ChildContainers/README.md)
 
-Allows you to configure "child containers" using the normal `IServiceCollection` interface, and also comes with a default child service provider which is just the native `ServiceProvider` implementation from microsoft.
+Allows you to configure "child containers" using the normal `IServiceCollection` interface.
+The child service provider can be implemented by your `conforming container` of choice i.e Autofac, Structuremap, Microsoft DI - any DI package that supports IServiceProvider.
 
-This means there is no need to adopt a third party DI container just to gain "child containers" feature - if thats your only reason for switching DI containers.
-
-It also means, thanks to a standard interface for building / configuring child containers, you can take a DI container library that doesn't have a child container feature,
+It means, thanks to a standard interface for building / configuring child containers, you can take a DI container library that doesn't have a child container feature,
 (like I did with Microsofts) and create "child containers" with it! The caveat is that:
 
     - Your DI container of choice must support building a container from an `IServiceCollection` or IEnumerable<ServiceDescriptor>`
