@@ -7,7 +7,7 @@
 | ------------- | --- | --- |
 | Dazinator.Extensions.DependencyInjection.NamedServices  | [![Dazinator.Extensions.DependencyInjection.NamedServices](https://img.shields.io/nuget/v/Dazinator.Extensions.DependencyInjection.NamedServices.svg)](https://www.nuget.org/packages/Dazinator.Extensions.DependencyInjection.NamedServices/) | [![Dazinator.Extensions.DependencyInjection.NamedServices](https://img.shields.io/nuget/vpre/Dazinator.Extensions.DependencyInjection.NamedServices.svg)](https://www.nuget.org/packages/Dazinator.Extensions.DependencyInjection.NamedServices/) | 
 | Dazinator.Extensions.DependencyInjection.ChildContainers  | [![Dazinator.Extensions.DependencyInjection.ChildContainers](https://img.shields.io/nuget/v/Dazinator.Extensions.DependencyInjection.ChildContainers.svg)](https://www.nuget.org/packages/Dazinator.Extensions.DependencyInjection.ChildContainers/) | [![Dazinator.Extensions.DependencyInjection.ChildContainers](https://img.shields.io/nuget/vpre/Dazinator.Extensions.DependencyInjection.ChildContainers.svg)](https://www.nuget.org/packages/Dazinator.Extensions.DependencyInjection.ChildContainers/) | 
-
+| Dazinator.Extensions.DependencyInjection.ChildContainers.Microsoft
 
 ## Intro
 
@@ -38,3 +38,5 @@ It also means, thanks to a standard interface for building / configuring child c
 If you are interested in that, look at the tests for `ChildServiceCollection`
 
 For docs, [see here](./src/DependencyInjection.ChildContainers/README.md)
+
+

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;netstandard2.0;net50</TargetFrameworks>
-    <PackageId>Dazinator.Extensions.DependencyInjection</PackageId>
+    <PackageId>Dazinator.Extensions.DependencyInjection.Microsoft</PackageId>
     <!-- Debug IL generation -->
     <ILEmitBackendSaveAssemblies>False</ILEmitBackendSaveAssemblies>
     <Nullable>Annotations</Nullable>
