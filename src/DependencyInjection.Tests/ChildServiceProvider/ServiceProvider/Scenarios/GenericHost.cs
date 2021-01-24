@@ -102,7 +102,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var childServices = _services.CreateChildServiceCollection();
             childServices.AddLogging();
 
-            var childServiceProvider = childServices.BuildChildServiceProvider(_serviceProvider,s=>s.BuildServiceProvider(), ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
+            var childServiceProvider = childServices.BuildChildServiceProvider(_serviceProvider, s => s.BuildServiceProvider(), ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
 
             // verify that logging and options services work within child container.
             // These are fairly fundamental.

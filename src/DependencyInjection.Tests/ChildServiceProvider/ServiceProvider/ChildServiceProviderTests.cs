@@ -29,7 +29,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
 
             var parentServiceProvider = parentServices.BuildServiceProvider();
-            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider, s=>s.BuildServiceProvider());
+            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider, s => s.BuildServiceProvider());
 
             var parentService = parentServiceProvider.GetRequiredService<AnimalService>();
             var childService = childServiceProvider.GetRequiredService<AnimalService>();
@@ -49,7 +49,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
 
             var serviceProvider = parentServices.BuildServiceProvider();
-            Assert.Throws<System.NotSupportedException>(() => childServices.BuildChildServiceProvider(serviceProvider,s=>s.BuildServiceProvider(), ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer));
+            Assert.Throws<System.NotSupportedException>(() => childServices.BuildChildServiceProvider(serviceProvider, s => s.BuildServiceProvider(), ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer));
 
             //var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
 

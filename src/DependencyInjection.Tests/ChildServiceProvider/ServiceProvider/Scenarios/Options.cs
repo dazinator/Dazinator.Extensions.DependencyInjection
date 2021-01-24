@@ -10,7 +10,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Options;
     using Xunit;
-    
+
     public class OptionsScenarioTests
     {
 

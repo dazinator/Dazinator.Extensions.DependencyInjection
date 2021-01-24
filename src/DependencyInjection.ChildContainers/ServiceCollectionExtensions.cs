@@ -44,7 +44,7 @@ namespace Dazinator.Extensions.DependencyInjection
             {
                 await configureAsync(childServices);
             }
-            var childContainer = childServices.BuildChildServiceProvider(parentServiceProvider, s=> buildSp(s), behaviour);
+            var childContainer = childServices.BuildChildServiceProvider(parentServiceProvider, s => buildSp(s), behaviour);
             return childContainer;
         }
 

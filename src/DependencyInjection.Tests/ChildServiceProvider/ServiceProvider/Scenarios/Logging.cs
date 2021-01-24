@@ -167,7 +167,7 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
             var testLogSink = new TestSink();
             var loggerProvider = new TestLoggerProvider(testLogSink);
 
-           // https://github.com/dotnet/runtime/blob/6072e4d3a7a2a1493f514cdf4be75a3d56580e84/src/libraries/Microsoft.Extensions.Logging/src/LoggingServiceCollectionExtensions.cs
+            // https://github.com/dotnet/runtime/blob/6072e4d3a7a2a1493f514cdf4be75a3d56580e84/src/libraries/Microsoft.Extensions.Logging/src/LoggingServiceCollectionExtensions.cs
             services.AddLogging(builder =>
             {
                 builder.AddProvider(loggerProvider);
