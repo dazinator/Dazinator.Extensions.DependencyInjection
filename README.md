@@ -16,7 +16,7 @@ This repository builds on `Microsoft.Extensions.DependencyInjection.Abstractions
 - Named Services
 - Child Containers
 
-It also provides a seperate nuget package called `Dazinator.Extensions.DependencyInjection.Microsoft` which basically contains a copy of the native MS `ServiceProvider` but with some changes as published here: https://github.com/dotnet/runtime/issues/45497
+It also provides a seperate (and optional) nuget package called `Dazinator.Extensions.DependencyInjection.Microsoft` which basically contains a copy of the native MS `ServiceProvider` but with some changes as published here: https://github.com/dotnet/runtime/issues/45497
 
 ## Named Services
 
