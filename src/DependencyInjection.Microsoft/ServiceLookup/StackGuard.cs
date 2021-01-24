@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup
 {
     internal sealed class StackGuard
     {

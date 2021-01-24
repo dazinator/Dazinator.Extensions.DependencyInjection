@@ -5,7 +5,7 @@ using System;
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup
 {
     internal struct ResultCache
     {

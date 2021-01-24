@@ -4,7 +4,7 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Dazinator.Extensions.DependencyInjection
+namespace Dazinator.Extensions.DependencyInjection.Microsoft
 {
     /// <summary>
     /// Default implementation of <see cref="IServiceProviderFactory{TContainerBuilder}"/>.

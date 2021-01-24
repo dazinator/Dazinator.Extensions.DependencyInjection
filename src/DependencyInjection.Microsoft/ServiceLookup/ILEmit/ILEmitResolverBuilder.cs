@@ -6,9 +6,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup
 {
     internal sealed class ILEmitResolverBuilder : CallSiteVisitor<ILEmitResolverBuilderContext, object>
     {

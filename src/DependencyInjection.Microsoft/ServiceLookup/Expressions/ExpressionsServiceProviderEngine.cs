@@ -3,9 +3,10 @@
 
 using System;
 using System.Collections.Generic;
+using Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup
 {
     internal class ExpressionsServiceProviderEngine : ServiceProviderEngine
     {

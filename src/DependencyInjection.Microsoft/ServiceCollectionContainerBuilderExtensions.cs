@@ -5,10 +5,10 @@ using System;
 #if NETCOREAPP
 using System.Runtime.CompilerServices;
 #endif
-using Dazinator.Extensions.DependencyInjection.ServiceLookup;
+using Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Dazinator.Extensions.DependencyInjection
+namespace Dazinator.Extensions.DependencyInjection.Microsoft
 {
     /// <summary>
     /// Extension methods for building a <see cref="ServiceProvider"/> from an <see cref="IServiceCollection"/>.

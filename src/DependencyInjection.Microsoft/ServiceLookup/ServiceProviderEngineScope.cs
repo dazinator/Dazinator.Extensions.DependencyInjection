@@ -1,16 +1,16 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Internal;
-using SR = global::Dazinator.Extensions.DependencyInjection.Resources.Strings;
-
-namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Threading.Tasks;
+    using global::Microsoft.Extensions.DependencyInjection;
+    using global::Microsoft.Extensions.Internal;
+    using SR = Resources.Strings;
+
     internal class ServiceProviderEngineScope : IServiceScope, IServiceProvider, IAsyncDisposable
     {
         // For testing only

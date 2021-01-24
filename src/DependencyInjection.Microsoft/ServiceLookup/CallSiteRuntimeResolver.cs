@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 
-namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup
 {
     internal sealed class CallSiteRuntimeResolver : CallSiteVisitor<RuntimeResolverContext, object>
     {

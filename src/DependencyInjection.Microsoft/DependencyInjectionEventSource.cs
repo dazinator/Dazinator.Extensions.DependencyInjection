@@ -1,13 +1,13 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
-using System.Diagnostics.Tracing;
-using System.Linq.Expressions;
-using Dazinator.Extensions.DependencyInjection.ServiceLookup;
-
-namespace Dazinator.Extensions.DependencyInjection
+namespace Dazinator.Extensions.DependencyInjection.Microsoft
 {
+    using System;
+    using System.Diagnostics.Tracing;
+    using System.Linq.Expressions;
+    using Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup;
+
     [EventSource(Name = "Dazinator-Extensions-DependencyInjection")]
     internal sealed class DependencyInjectionEventSource : EventSource
     {

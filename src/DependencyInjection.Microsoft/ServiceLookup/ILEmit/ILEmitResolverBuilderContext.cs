@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 
-namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup
 {
     internal class ILEmitResolverBuilderContext
     {

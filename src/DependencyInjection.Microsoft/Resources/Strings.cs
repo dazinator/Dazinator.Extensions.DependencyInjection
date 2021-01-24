@@ -1,4 +1,4 @@
-namespace Dazinator.Extensions.DependencyInjection.Resources
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.Resources
 {
     using System;
     using System.Resources;

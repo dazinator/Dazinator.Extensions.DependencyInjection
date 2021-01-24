@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Dazinator.Extensions.DependencyInjection
+namespace Dazinator.Extensions.DependencyInjection.Microsoft
 {
     /// <summary>
     /// Options for configuring various behaviors of the default <see cref="IServiceProvider"/> implementation.

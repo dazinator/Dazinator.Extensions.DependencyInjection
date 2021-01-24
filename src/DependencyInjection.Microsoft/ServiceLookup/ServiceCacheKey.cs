@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup
 {
     internal struct ServiceCacheKey : IEquatable<ServiceCacheKey>
     {

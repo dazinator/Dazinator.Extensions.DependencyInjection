@@ -4,6 +4,6 @@
 using System;
 using System.Runtime.ExceptionServices;
 
-namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup
 {
 }

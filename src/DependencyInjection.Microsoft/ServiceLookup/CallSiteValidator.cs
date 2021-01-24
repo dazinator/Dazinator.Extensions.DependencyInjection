@@ -1,13 +1,13 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
-using System.Collections.Concurrent;
-using Microsoft.Extensions.DependencyInjection;
-using SR = global::Dazinator.Extensions.DependencyInjection.Resources.Strings;
-
-namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup
 {
+    using System;
+    using System.Collections.Concurrent;
+    using global::Microsoft.Extensions.DependencyInjection;
+    using SR = Resources.Strings;
+
     internal class CallSiteValidator : CallSiteVisitor<CallSiteValidator.CallSiteValidatorState, Type>
     {
         // Keys are services being resolved via GetService, values - first scoped service in their call site tree

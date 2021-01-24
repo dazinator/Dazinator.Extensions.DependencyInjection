@@ -15,8 +15,8 @@
     <DefineConstants Condition="'$(ILEmitBackend)' == 'True'">$(DefineConstants);IL_EMIT</DefineConstants>
     <DefineConstants Condition="$(TargetFramework.StartsWith('net4')) and '$(ILEmitBackendSaveAssemblies)' == 'True'">$(DefineConstants);SAVE_ASSEMBLIES</DefineConstants>
     <!--<DefineConstants Condition="$(TargetFramework.StartsWith('netstandard1'))">$(DefineConstants);NO_ASYNC_BCL</DefineConstants>-->
-    <AssemblyName>Dazinator.Extensions.DependencyInjection</AssemblyName>
-    <RootNamespace>Dazinator.Extensions.DependencyInjection</RootNamespace>
+    <AssemblyName>Dazinator.Extensions.DependencyInjection.Microsoft</AssemblyName>
+    <RootNamespace>Dazinator.Extensions.DependencyInjection.Microsoft</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

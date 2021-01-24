@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup
 {
     internal class IEnumerableCallSite : ServiceCallSite
     {

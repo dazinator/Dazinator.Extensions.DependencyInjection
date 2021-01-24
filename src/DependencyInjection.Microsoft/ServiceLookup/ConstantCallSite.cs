@@ -1,11 +1,11 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
-using SR = global::Dazinator.Extensions.DependencyInjection.Resources.Strings;
-
-namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
+namespace Dazinator.Extensions.DependencyInjection.Microsoft.ServiceLookup
 {
+    using System;
+    using SR = Resources.Strings;
+
     internal class ConstantCallSite : ServiceCallSite
     {
         private readonly Type _serviceType;
