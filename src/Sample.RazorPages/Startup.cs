@@ -119,7 +119,7 @@ namespace Sample.RazorPages
 
             services.AddSingleton<PageLoader, DefaultPageLoader>();
             services.AddSingleton<ActionEndpointFactory>();
-            
+
 
             services.AddSingleton<RequestDelegate>(sp =>
             {

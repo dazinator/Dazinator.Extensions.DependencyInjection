@@ -7,7 +7,7 @@ using Dazinator.Extensions.DependencyInjection.ServiceLookup;
 
 namespace Dazinator.Extensions.DependencyInjection
 {
-    internal class CallSiteJsonFormatter: CallSiteVisitor<CallSiteJsonFormatter.CallSiteFormatterContext, object>
+    internal class CallSiteJsonFormatter : CallSiteVisitor<CallSiteJsonFormatter.CallSiteFormatterContext, object>
     {
         internal static CallSiteJsonFormatter Instance = new CallSiteJsonFormatter();
 
@@ -188,7 +188,7 @@ namespace Dazinator.Extensions.DependencyInjection
                 }
                 else
                 {
-                    Builder.AppendFormat( "null");
+                    Builder.AppendFormat("null");
                 }
             }
 

@@ -81,7 +81,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var parentOpenGeneric = serviceProvider.GetService<IGenericServiceA<string>>();
             var childOpenGeneric = childSp.GetService<IGenericServiceA<string>>();
             Assert.Same(parentOpenGeneric, childOpenGeneric);
-         
+
         }
 
 

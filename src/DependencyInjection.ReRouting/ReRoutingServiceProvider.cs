@@ -75,7 +75,7 @@ namespace Dazinator.Extensions.DependencyInjection
                 var sp = LookupServiceProvider(serviceType);
                 return sp.GetService(serviceType);
                 //return Resolve(serviceType);
-            }          
+            }
 
             // ii a & b)
             if (_openGenericTypeMappingCache.TryGetValue(serviceType, out var mappedSp))

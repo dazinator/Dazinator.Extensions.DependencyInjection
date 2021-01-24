@@ -172,9 +172,11 @@ namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
 
         private IServiceProvider InitializeServiceProvider()
         {
-            if (Engine.ServiceProviderFactory is null) return this;
+            if (Engine.ServiceProviderFactory is null)
+                return this;
             // Re-entrant calls from ServiceProviderFactory for IServiceProvider will get `this`;
-            if (_initializing) return this;
+            if (_initializing)
+                return this;
 
             // Stand in lock object to save an allocation.
             lock (ResolvedServices)

@@ -8,7 +8,7 @@ using SR = global::Dazinator.Extensions.DependencyInjection.Resources.Strings;
 
 namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
 {
-    internal class CallSiteValidator: CallSiteVisitor<CallSiteValidator.CallSiteValidatorState, Type>
+    internal class CallSiteValidator : CallSiteVisitor<CallSiteValidator.CallSiteValidatorState, Type>
     {
         // Keys are services being resolved via GetService, values - first scoped service in their call site tree
         private readonly ConcurrentDictionary<Type, Type> _scopedServices = new ConcurrentDictionary<Type, Type>();
@@ -47,7 +47,7 @@ namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
             Type result = null;
             foreach (ServiceCallSite parameterCallSite in constructorCallSite.ParameterCallSites)
             {
-                Type scoped =  VisitCallSite(parameterCallSite, state);
+                Type scoped = VisitCallSite(parameterCallSite, state);
                 if (result == null)
                 {
                     result = scoped;

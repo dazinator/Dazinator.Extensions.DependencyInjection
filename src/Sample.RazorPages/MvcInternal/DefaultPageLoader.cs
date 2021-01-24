@@ -112,8 +112,8 @@ namespace Sample.ChildContainers.RazorPages.MvcInternal
             // I made a change here..
             // checked cache
             var task = actionDescriptor.GetProperty<Task<CompiledPageActionDescriptor>>();
-                // actionDescriptor.CompiledPageActionDescriptorTask;
-            
+            // actionDescriptor.CompiledPageActionDescriptorTask;
+
             if (task != null)
             {
                 return task;
@@ -252,10 +252,10 @@ namespace Sample.ChildContainers.RazorPages.MvcInternal
                 // TODO: I changed this..
                 var message = $"Invaliddescriptor model type: {applicationModel.ActionDescriptor.DisplayName}, {applicationModel.ModelType.Name}, {applicationModel.DeclaredModelType.Name}";
 
-                    //Resources.FormatInvalidActionDescriptorModelType(
-                    //applicationModel.ActionDescriptor.DisplayName,
-                    //applicationModel.ModelType.Name,
-                    //applicationModel.DeclaredModelType.Name);
+                //Resources.FormatInvalidActionDescriptorModelType(
+                //applicationModel.ActionDescriptor.DisplayName,
+                //applicationModel.ModelType.Name,
+                //applicationModel.DeclaredModelType.Name);
 
                 throw new InvalidOperationException(message);
             }

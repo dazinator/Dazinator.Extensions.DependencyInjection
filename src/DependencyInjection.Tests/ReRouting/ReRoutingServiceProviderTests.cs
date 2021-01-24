@@ -100,7 +100,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests
                 if (type == typeof(AnimalService))
                 {
                     return new AnimalService() { SomeProperty = "default" };
-                }              
+                }
                 throw new ArgumentException(nameof(type));
             });
 

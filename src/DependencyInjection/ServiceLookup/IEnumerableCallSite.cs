@@ -18,7 +18,7 @@ namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
         }
 
         public override Type ServiceType => typeof(IEnumerable<>).MakeGenericType(ItemType);
-        public override Type ImplementationType  => ItemType.MakeArrayType();
+        public override Type ImplementationType => ItemType.MakeArrayType();
         public override CallSiteKind Kind { get; } = CallSiteKind.IEnumerable;
     }
 }

@@ -129,9 +129,11 @@ namespace Dazinator.Extensions.DependencyInjection.ServiceLookup
 
         private IServiceScopeFactory InitializeServiceScopeFactory()
         {
-            if (ServiceProviderFactory is null) return this;
+            if (ServiceProviderFactory is null)
+                return this;
             // Re-entrant calls from ServiceProviderFactory for IServiceScopeFactory will get `this`;
-            if (_initializing) return this;
+            if (_initializing)
+                return this;
 
             lock (_serviceScopeFactoryInitLock)
             {

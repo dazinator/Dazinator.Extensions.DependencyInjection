@@ -4,9 +4,9 @@
 #nullable enable
 
 using System;
-using System.Text;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace Microsoft.Extensions.Internal
 {
