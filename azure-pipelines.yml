@@ -7,6 +7,10 @@ trigger:
 - master
 - develop
 
+pr:
+- feature/*
+- hotfix/*
+
 pool:
   vmImage: 'windows-latest'
 
