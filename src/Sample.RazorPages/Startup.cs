@@ -79,7 +79,7 @@ namespace Sample.RazorPages
                                          .ConfigureServices(child => child.AddOptions())
                                          .AutoPromoteChildDuplicates(d => d.IsSingletonOpenGeneric(),
                                                                   (child) => ConfigureChildServices(child, builder))
-                                      .BuildChildServiceProvider(appServices);
+                                      .BuildChildServiceProvider(appServices, s=>s.BuildServiceProvider());
             });
 
             app.Use(async (context, next) =>

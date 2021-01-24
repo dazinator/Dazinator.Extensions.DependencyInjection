@@ -10,7 +10,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Options;
     using Xunit;
-
+    
     public class OptionsScenarioTests
     {
 
@@ -30,7 +30,9 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
                  {
                      a.IsConfigured = true;
                  });
-             }, ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
+             },
+             s => s.BuildServiceProvider(),
+             ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
 
 
             var options = childServiceProvider.GetRequiredService<IOptions<TestOptions>>();

@@ -11,7 +11,7 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
     using Microsoft.Extensions.Logging.Configuration;
     using Xunit;
     using Xunit.Abstractions;
-
+    using ServiceCollection = Dazinator.Extensions.DependencyInjection.ServiceCollection;
 
     // The following two parent level "singleton open generic" registrations are problematic
     // as they can't be resolved to the same parent instance from a child container - the child container will get its own
@@ -48,7 +48,9 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
             {
 
 
-            }, ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
+            },
+            s => s.BuildServiceProvider(),
+            ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
 
             //   https://github.com/dotnet/runtime/blob/6072e4d3a7a2a1493f514cdf4be75a3d56580e84/src/libraries/Microsoft.Extensions.Logging.Configuration/src/LoggerProviderConfiguration.cs#L10
             var childLogger = childServiceProvider.GetRequiredService<ILogger<LoggingScenarioTests>>();
@@ -88,7 +90,7 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
         {
             var services = new ServiceCollection();
 
-            https://github.com/dotnet/runtime/blob/6072e4d3a7a2a1493f514cdf4be75a3d56580e84/src/libraries/Microsoft.Extensions.Logging/src/LoggingServiceCollectionExtensions.cs
+            //https://github.com/dotnet/runtime/blob/6072e4d3a7a2a1493f514cdf4be75a3d56580e84/src/libraries/Microsoft.Extensions.Logging/src/LoggingServiceCollectionExtensions.cs
             services.AddLogging(builder =>
             {
                 builder.AddXUnit(OutputHelper, (options) =>
@@ -118,7 +120,9 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
                 });
 
                 childServices.AddSingleton(childLoggerFatory);
-            }, ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
+            },
+            s => s.BuildServiceProvider(),
+            ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
 
             var childLogger = childServiceProvider.GetRequiredService<ILogger<LoggingScenarioTests>>();
             var parentLogger = serviceProvider.GetRequiredService<ILogger<LoggingScenarioTests>>();
@@ -163,7 +167,7 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
             var testLogSink = new TestSink();
             var loggerProvider = new TestLoggerProvider(testLogSink);
 
-            https://github.com/dotnet/runtime/blob/6072e4d3a7a2a1493f514cdf4be75a3d56580e84/src/libraries/Microsoft.Extensions.Logging/src/LoggingServiceCollectionExtensions.cs
+           // https://github.com/dotnet/runtime/blob/6072e4d3a7a2a1493f514cdf4be75a3d56580e84/src/libraries/Microsoft.Extensions.Logging/src/LoggingServiceCollectionExtensions.cs
             services.AddLogging(builder =>
             {
                 builder.AddProvider(loggerProvider);
@@ -198,7 +202,9 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
                 });
 
                 childServices.AddSingleton(childLoggerFatory);
-            }, ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
+            },
+             s => s.BuildServiceProvider(),
+             ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
 
             var childLogger = childServiceProvider.GetRequiredService<ILogger<LoggingScenarioTests>>();
             var parentLogger = serviceProvider.GetRequiredService<ILogger<LoggingScenarioTests>>();

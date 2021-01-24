@@ -1,0 +1,116 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1;netstandard2.0;net50</TargetFrameworks>
+    <PackageId>Dazinator.Extensions.DependencyInjection</PackageId>
+    <!-- Debug IL generation -->
+    <ILEmitBackendSaveAssemblies>False</ILEmitBackendSaveAssemblies>
+    <Nullable>Annotations</Nullable>
+    <LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+
+  <!-- DesignTimeBuild requires all the TargetFramework Derived Properties to not be present in the first property group. -->
+  <PropertyGroup>
+    <ILEmitBackend Condition="'$(TargetFramework)' != 'netstandard2.0'">True</ILEmitBackend>
+    <DefineConstants Condition="'$(ILEmitBackend)' == 'True'">$(DefineConstants);IL_EMIT</DefineConstants>
+    <DefineConstants Condition="$(TargetFramework.StartsWith('net4')) and '$(ILEmitBackendSaveAssemblies)' == 'True'">$(DefineConstants);SAVE_ASSEMBLIES</DefineConstants>
+    <!--<DefineConstants Condition="$(TargetFramework.StartsWith('netstandard1'))">$(DefineConstants);NO_ASYNC_BCL</DefineConstants>-->
+    <AssemblyName>Dazinator.Extensions.DependencyInjection</AssemblyName>
+    <RootNamespace>Dazinator.Extensions.DependencyInjection</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--<Compile Include="**\*.cs" />-->
+    <Compile Remove="ServiceLookup\ILEmit\**\*.cs" />
+    <Compile Condition="'$(ILEmitBackend)' == 'True'" Include="ServiceLookup\ILEmit\*.cs" />
+  </ItemGroup>
+
+  <!--<ItemGroup Condition="'$(TargetFramework)' != '$(NetCoreAppCurrent)'">
+    <Compile Include="$(CoreLibSharedDir)System\Diagnostics\CodeAnalysis\DynamicallyAccessedMembersAttribute.cs" />
+    <Compile Include="$(CoreLibSharedDir)System\Diagnostics\CodeAnalysis\DynamicallyAccessedMemberTypes.cs" />
+    <Compile Include="$(CoreLibSharedDir)System\Diagnostics\CodeAnalysis\UnconditionalSuppressMessageAttribute.cs" />
+  </ItemGroup>-->
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net50'">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
+    <!--<PackageReference Include="Microsoft.Bcl.AsyncInterfaces">
+      <Version>5.0.0</Version>
+    </PackageReference>-->
+  </ItemGroup>
+  
+  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
+   <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.2" />
+   <!--<PackageReference Include="Microsoft.Bcl.AsyncInterfaces">
+      <Version>5.0.0</Version>
+    </PackageReference>-->
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.1.0" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
+   <PackageReference Include="Microsoft.Bcl.AsyncInterfaces">
+      <Version>5.0.0</Version>
+    </PackageReference>
+  </ItemGroup>
+
+  <!--<ItemGroup Condition="'$(TargetFramework)'=='netstandard1.3'">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="1.0.0" />
+    --><!--<PackageReference Include="System.Collections.Concurrent">
+      <Version>4.3.0</Version>
+    </PackageReference>--><!--
+
+  </ItemGroup>-->
+
+  <ItemGroup>
+    <Compile Remove="System\Diagnostics\CodeAnalysis\DynamicallyAccessedMembersAttribute.cs" />
+    <Compile Remove="System\Diagnostics\CodeAnalysis\DynamicallyAccessedMemberTypes.cs" />
+    <Compile Remove="System\Diagnostics\CodeAnalysis\UnconditionalSuppressMessageAttribute.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="CodeAnalysis\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DependencyInjection\DependencyInjection.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\Strings.resx">
+      <Generator>MSBuild:_GenerateResxSource</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources\Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  
+
+  <!--<ItemGroup Condition="'$(TargetFramework)' == '$(NetCoreAppCurrent)'">
+    <Reference Include="System.Collections" />
+    <Reference Include="System.Collections.Concurrent" />
+    <Reference Include="System.ComponentModel" />
+    <Reference Include="System.Diagnostics.Tracing" />
+    <Reference Include="System.Linq" />
+    <Reference Include="System.Linq.Expressions" />
+    <Reference Include="System.Reflection.Emit.ILGeneration" />
+    <Reference Include="System.Reflection.Emit.Lightweight" />
+    <Reference Include="System.Reflection.Primitives" />
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.Threading" />
+    <Reference Include="System.Threading.ThreadPool" />
+  </ItemGroup>-->
+
+</Project>

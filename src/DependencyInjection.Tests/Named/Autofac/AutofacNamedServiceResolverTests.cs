@@ -6,6 +6,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named.Autofac
     using global::Autofac.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection;
     using Xunit;
+    using ServiceCollection = Dazinator.Extensions.DependencyInjection.ServiceCollection;
 
     public class NamedServiceResolverTests
     {

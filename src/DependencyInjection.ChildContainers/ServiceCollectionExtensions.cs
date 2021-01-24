@@ -24,44 +24,34 @@ namespace Dazinator.Extensions.DependencyInjection
             return childServiceCollection;
         }
 
-#if NETSTANDARD1_3
         public static IServiceProvider CreateChildServiceProvider(
-#else
-        public static IServiceProvider CreateChildServiceProvider(
-#endif
 
-           this IServiceCollection parentServices, IServiceProvider parentServiceProvider, Action<IChildServiceCollection> configure, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
+
+           this IServiceCollection parentServices, IServiceProvider parentServiceProvider, Action<IChildServiceCollection> configureChildServices, Func<IServiceCollection, IServiceProvider> buildSp, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
         {
             var childServices = parentServices.CreateChildServiceCollection();
-            configure?.Invoke(childServices);
-            var childContainer = childServices.BuildChildServiceProvider(parentServiceProvider, behaviour);
+            configureChildServices?.Invoke(childServices);
+            var childContainer = childServices.BuildChildServiceProvider(parentServiceProvider, s => buildSp(s), behaviour);
             return childContainer;
         }
 
-#if NETSTANDARD1_3
-        public static async Task<IServiceProvider> CreateChildServiceProviderAsync(
-#else
-        public static async Task<IServiceProvider> CreateChildServiceProviderAsync(
-#endif
 
-           this IServiceCollection parentServices, IServiceProvider parentServiceProvider, Func<IChildServiceCollection, Task> configureAsync, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
+        public static async Task<IServiceProvider> CreateChildServiceProviderAsync(
+           this IServiceCollection parentServices, IServiceProvider parentServiceProvider, Func<IChildServiceCollection, Task> configureAsync, Func<IServiceCollection, IServiceProvider> buildSp, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
         {
             var childServices = parentServices.CreateChildServiceCollection();
             if (configureAsync != null)
             {
                 await configureAsync(childServices);
             }
-            var childContainer = childServices.BuildChildServiceProvider(parentServiceProvider, behaviour);
+            var childContainer = childServices.BuildChildServiceProvider(parentServiceProvider, s=> buildSp(s), behaviour);
             return childContainer;
         }
 
-#if NETSTANDARD1_3
         public static IServiceProvider BuildChildServiceProvider(
-#else
-        public static IServiceProvider BuildChildServiceProvider(
-#endif
 
-           this IChildServiceCollection childServiceCollection, IServiceProvider parentServiceProvider, ParentSingletonOpenGenericRegistrationsBehaviour singletonOpenGenericBehaviour = ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)
+
+           this IChildServiceCollection childServiceCollection, IServiceProvider parentServiceProvider, Func<IServiceCollection, IServiceProvider> buildSp, ParentSingletonOpenGenericRegistrationsBehaviour singletonOpenGenericBehaviour = ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)
         {
             // add all the same registrations that are in the parent to the child,
             // but rewrite them to resolve from the parent IServiceProvider.
@@ -95,15 +85,15 @@ namespace Dazinator.Extensions.DependencyInjection
 
             if (singletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)
             {
-                var childSp = reWrittenServiceCollection.BuildServiceProvider();
+                var childSp = buildSp(reWrittenServiceCollection);
                 var routingSp = new ReRoutingServiceProvider(childSp);
                 routingSp.ReRoute(parentServiceProvider, unsupportedDescriptors.Select(a => a.ServiceType));
                 return routingSp;
             }
             else
             {
-                var sp = reWrittenServiceCollection.BuildServiceProvider();
-                return sp;
+                var childSp = buildSp(reWrittenServiceCollection);
+                return childSp;
             }
 
 

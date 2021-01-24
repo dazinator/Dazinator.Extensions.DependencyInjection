@@ -7,6 +7,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named
     using Microsoft.Extensions.DependencyInjection;
     using NuGet.Frameworks;
     using Xunit;
+    using ServiceCollection = ServiceCollection;
 
     public class NamedServiceRegistryTests
     {

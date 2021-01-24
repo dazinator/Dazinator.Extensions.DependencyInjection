@@ -25,7 +25,9 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
                  {
                      o.RootDirectory = "/Child";
                  });
-             }, ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
+             },
+             s => s.BuildServiceProvider(),
+             ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
 
 
             var options = childServiceProvider.GetRequiredService<IOptions<RazorPagesOptions>>();
