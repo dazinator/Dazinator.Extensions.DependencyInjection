@@ -49,7 +49,7 @@ namespace Dazinator.Extensions.DependencyInjection
                 if (_inner is IDisposable innerDisposable)
                 {
                     innerDisposable.Dispose();
-                }                
+                }
 
                 _onDispose?.Invoke();
             }
@@ -84,7 +84,7 @@ namespace Dazinator.Extensions.DependencyInjection
             if (_onAsyncDispose != null)
             {
                 await _onAsyncDispose().ConfigureAwait(false);
-            }           
+            }
 
             //if (_onDispose != null)
             //{

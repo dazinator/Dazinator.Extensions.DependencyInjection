@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DependencyInjection.ReRouti
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DependencyInjection.Microsoft", "DependencyInjection.Microsoft\DependencyInjection.Microsoft.csproj", "{7995F503-AFA7-498A-A3D7-924FD3CB54F5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependencyInjection", "DependencyInjection\DependencyInjection.csproj", "{70985784-29CA-465F-ABFC-2DF12EDEBC49}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DependencyInjection", "DependencyInjection\DependencyInjection.csproj", "{70985784-29CA-465F-ABFC-2DF12EDEBC49}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DependencyInjection.ChildContainers", "DependencyInjection.ChildContainers\DependencyInjection.ChildContainers.csproj", "{E7485467-D842-42DE-B4F3-D1CF91D9E5DE}"
 EndProject

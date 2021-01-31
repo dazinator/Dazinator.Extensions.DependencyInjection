@@ -112,7 +112,7 @@ namespace Dazinator.Extensions.DependencyInjection
             void onDispose()
             {
                 // dispose of child sp first, then dispose parent scope that we leased to support the child sp.
-                DisposeHelper.DisposeIfImplemented(childSp);             
+                DisposeHelper.DisposeIfImplemented(childSp);
                 parentScope.Dispose();
             };
 
@@ -122,7 +122,7 @@ namespace Dazinator.Extensions.DependencyInjection
             {
                 // dispose of child sp first, then dispose parent scope that we leased to support the child sp.
                 await DisposeHelper.DisposeAsyncIfImplemented(childSp);
-                await DisposeHelper.DisposeAsyncIfImplemented(parentScope);               
+                await DisposeHelper.DisposeAsyncIfImplemented(parentScope);
             }
 #endif
 
