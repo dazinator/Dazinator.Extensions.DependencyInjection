@@ -5,6 +5,8 @@ namespace Dazinator.Extensions.DependencyInjection
     using System.Collections.Immutable;
     using System.Linq;
     using System.Runtime.CompilerServices;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Requests for specific service types can be re-routed to an alternative service provider. 
     /// </summary>
@@ -115,6 +117,5 @@ namespace Dazinator.Extensions.DependencyInjection
             }
         }
     }
-
 
 }

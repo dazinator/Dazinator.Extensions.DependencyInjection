@@ -5,6 +5,10 @@
     <PackageId>Dazinator.Extensions.DependencyInjection.ReRouting</PackageId>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+    <DefineConstants>SUPPORTS_ASYNC_DISPOSE</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
   </ItemGroup>

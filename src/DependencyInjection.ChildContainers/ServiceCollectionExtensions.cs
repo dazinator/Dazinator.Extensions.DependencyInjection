@@ -7,6 +7,7 @@ namespace Dazinator.Extensions.DependencyInjection
     using System.Text;
     using System.Threading.Tasks;
     using Dazinator.Extensions.DependencyInjection.ChildContainers;
+    using global::DependencyInjection.ReRouting;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -56,10 +57,10 @@ namespace Dazinator.Extensions.DependencyInjection
             return childContainer;
         }
 
-        public static IServiceProvider BuildChildServiceProvider(
-
-
-           this IChildServiceCollection childServiceCollection, IServiceProvider parentServiceProvider, Func<IServiceCollection, IServiceProvider> buildSp, ParentSingletonOpenGenericRegistrationsBehaviour singletonOpenGenericBehaviour = ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)
+        public static IServiceProvider BuildChildServiceProvider(this IChildServiceCollection childServiceCollection,
+            IServiceProvider parentServiceProvider,
+            Func<IServiceCollection, IServiceProvider> buildSp,
+            ParentSingletonOpenGenericRegistrationsBehaviour singletonOpenGenericBehaviour = ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)
         {
             // add all the same registrations that are in the parent to the child,
             // but rewrite them to resolve from the parent IServiceProvider.
@@ -67,10 +68,11 @@ namespace Dazinator.Extensions.DependencyInjection
             var parentRegistrations = childServiceCollection.ParentDescriptors;
             var reWrittenServiceCollection = new ServiceCollection();
             var unsupportedDescriptors = new List<ServiceDescriptor>(); // we can't honor singleton open generic registrations (child container would get different instance)
+            var parentScope = parentServiceProvider.CreateScope(); // obtain a new scope from the parent that can be safely used by the child for the lifetime of the child.
 
             foreach (var item in parentRegistrations)
             {
-                var rewrittenDescriptor = CreateChildDescriptorForExternalService(item, parentServiceProvider, unsupportedDescriptors, singletonOpenGenericBehaviour);
+                var rewrittenDescriptor = CreateChildDescriptorForExternalService(item, parentScope.ServiceProvider, unsupportedDescriptors, singletonOpenGenericBehaviour);
                 if (rewrittenDescriptor != null)
                 {
                     reWrittenServiceCollection.Add(rewrittenDescriptor);
@@ -91,22 +93,49 @@ namespace Dazinator.Extensions.DependencyInjection
                 reWrittenServiceCollection.Add(item);
             }
 
+            IServiceProvider innerSp = null;
+            IServiceProvider childSp = null;
             if (singletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)
             {
-                var childSp = buildSp(reWrittenServiceCollection);
+                childSp = buildSp(reWrittenServiceCollection);
                 var routingSp = new ReRoutingServiceProvider(childSp);
-                routingSp.ReRoute(parentServiceProvider, unsupportedDescriptors.Select(a => a.ServiceType));
-                return routingSp;
+                routingSp.ReRoute(parentScope.ServiceProvider, unsupportedDescriptors.Select(a => a.ServiceType));
+                innerSp = routingSp;
             }
             else
             {
-                var childSp = buildSp(reWrittenServiceCollection);
-                return childSp;
+                childSp = buildSp(reWrittenServiceCollection);
+                innerSp = childSp;
             }
 
+            // Make sure we dispose any parent sp scope that we have leased, when the IServiceProvider is disposed.
+            void onDispose()
+            {
+                // dispose of child sp first, then dispose parent scope that we leased to support the child sp.
+                DisposeHelper.DisposeIfImplemented(childSp);             
+                parentScope.Dispose();
+            };
 
 
+#if SUPPORTS_ASYNC_DISPOSE
+            async Task onDisposeAsync()
+            {
+                // dispose of child sp first, then dispose parent scope that we leased to support the child sp.
+                await DisposeHelper.DisposeAsyncIfImplemented(childSp);
+                await DisposeHelper.DisposeAsyncIfImplemented(parentScope);               
+            }
+#endif
+
+            var disposableSp = new DisposableServiceProvider(innerSp, onDispose
+#if SUPPORTS_ASYNC_DISPOSE
+                    , onDisposeAsync
+#endif
+);
+
+            return disposableSp;
         }
+
+
 
         private static void ThrowUnsupportedDescriptors(IEnumerable<ServiceDescriptor> unsupportedDescriptors)
         {
@@ -152,9 +181,6 @@ namespace Dazinator.Extensions.DependencyInjection
                 return serviceDescriptor;
             }
 
-            // These incompatible services should have already been filtered out of the child service collection based on
-            // HideParentServices()
-
             if (singletonOpenGenericBehaviour == ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)
             {
                 // allow the open generic singleton registration to be added again to this child again resulting in additional singleton instance at child scope.
@@ -170,54 +196,6 @@ namespace Dazinator.Extensions.DependencyInjection
             unsupportedDescriptors.Add(item);
             return null;
 
-            // oh flip
-            // e.g IOptions<T>
-            // If so, when we resolve IOptions<T> in the child container, we need it to resolve to an instance created in the parent container
-            // BUT we can't create the instance now, as we have to wait for the concrete type param to be provided..
-            // This is a bit of a dilemma because if we register a function to run when the service is requsted, the child container will steal ownership.
-            // because it thinks its creating the singleton type.
-            // So we need to register an instance, 
-
-
-            // Thoughts and Ideas..
-            // Problem is how we ensure when an open generic is resolved from the child container that we resolve the same instance as resolved from the parent when the same type params are used.
-
-
-            // A) If the service is non generic, or is a closed generic type, we can create an instance from the parent container and register it in the child container so that
-            // the child container will re-use the same instance, AND won't take ownership of the object
-
-            // B) If the service is an open generic, we can't create an instance ahead of time, because the container needs to create the instance based on the type params requested.
-            //    In this case there is little we can do, but we can do this:
-            //       - If the open generic type is not backed by an implementation type that implements IDisposable or IAsyncDisposable then it should
-            //         be safe to allow the child container to "own" it - as technically that means very little.
-            //         This means we can register it as a factory func, that returns the same instance from the parent?
-            // NOOOO THIS WONT WORK, because we can't register a factory func to satisfy an open generic.
-
-            // NEXT IDEA
-            // A) We capture a list of all the open generic singleton registrations
-            //    We derive from ServiceProvider and overide GetService<T> (or wrap IServiceProvider and decorate the same)
-            //        When a type is resolved thats assignable to an open generic type in our list,
-            //            We forward the resolution to the parent service provider instead. (parent.GetRequiredService()).
-            // This might not work due to BuildServiceProvider capturing services to be injected at that point, therefore GetRequiredService might not be called on our decorated ServiceProvider to resolve the open generic type as the factory was already resolved during the BuildServiceProvider() method and the factory may just be called.
-
-            // LAST IDEA
-            // We don't try to solve this in a general way, but detect specific open generic singleton registrations and try to make them work here specifically.
-            // bit yuck but not sure what else to do.
-
-
-
-            //switch (singletonOpenGenericBehaviour)
-            //{
-            //    case ParentSingletonOpenGenericResolutionBehaviour.ThrowNotSupportedException:
-            //        unsupportedDescriptors.Add(item); // we'll record this as an unsupported descriptor so an exception is thrown to include the detail.
-            //        return null;
-            //    case ParentSingletonOpenGenericResolutionBehaviour.RegisterAgainAsSeperateSingletonInstancesInChildContainer:
-            //        return item;
-            //    case ParentSingletonOpenGenericResolutionBehaviour.Omit:
-            //        return null;
-            //    default:
-            //        return null;
-            //}       
         }
     }
 }
