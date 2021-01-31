@@ -18,6 +18,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Configuration;
 using Microsoft.Extensions.Options;
+using Sample.ChildContainers.RazorPages.MvcInternal;
 
 namespace Sample.RazorPages
 {
@@ -78,7 +79,7 @@ namespace Sample.RazorPages
                                          .ConfigureServices(child => child.AddOptions())
                                          .AutoPromoteChildDuplicates(d => d.IsSingletonOpenGeneric(),
                                                                   (child) => ConfigureChildServices(child, builder))
-                                      .BuildChildServiceProvider(appServices);
+                                      .BuildChildServiceProvider(appServices, s => s.BuildServiceProvider());
             });
 
             app.Use(async (context, next) =>
@@ -115,6 +116,10 @@ namespace Sample.RazorPages
             {
                 o.RootDirectory = $"/Child";
             });
+
+            services.AddSingleton<PageLoader, DefaultPageLoader>();
+            services.AddSingleton<ActionEndpointFactory>();
+
 
             services.AddSingleton<RequestDelegate>(sp =>
             {

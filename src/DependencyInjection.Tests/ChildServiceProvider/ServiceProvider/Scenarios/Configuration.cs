@@ -41,7 +41,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var childServiceProvider = services.CreateChildServiceProvider(serviceProvider, (childServices) =>
              {
                  // don't add any additional child registrations. so IConfiguration is purely in parent scope.
-             });
+             }, s => s.BuildServiceProvider());
 
 
             var configInstance = childServiceProvider.GetRequiredService<IConfiguration>();
@@ -126,7 +126,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
 
                 childServices.AddSingleton(childConfig);
 
-            });
+            }, s => s.BuildServiceProvider());
 
 
             var parentConfig = serviceProvider.GetRequiredService<IConfiguration>();
@@ -173,7 +173,10 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             Assert.Equal("changed", childConfig["InheritedFromParent"]);
 
             // verify when disposing child containers, parent config still works
-            childServiceProvider.Dispose();
+            if (childServiceProvider is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
 
 
             Assert.Equal("Parent", parentConfig["Level"]); // can still use.

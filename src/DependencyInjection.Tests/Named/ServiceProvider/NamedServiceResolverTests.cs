@@ -6,6 +6,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Named.ServiceProvider
     using Dazinator.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection;
     using Xunit;
+    using ServiceCollection = ServiceCollection;
 
     public class NamedServiceResolverTests
     {

@@ -29,7 +29,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
 
             var parentServiceProvider = parentServices.BuildServiceProvider();
-            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider, s => s.BuildServiceProvider());
 
             var parentService = parentServiceProvider.GetRequiredService<AnimalService>();
             var childService = childServiceProvider.GetRequiredService<AnimalService>();
@@ -40,7 +40,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
 
         [Fact]
         [Description("Services registered in the parent container as singleton open generics, are not supported and should cause an exception to be thrown by default unless user specifies a behaviour flag to opt in to a workaround.")]
-        public void ParentService_SingletonOpenGeneric_ThrowsByDefault()
+        public void ParentService_SingletonOpenGeneric_ThrowsWhenOptionsSet()
         {
             var parentServices = new ServiceCollection();
             var descriptorA = new ServiceDescriptor(typeof(IGenericServiceA<>), typeof(GenericAnimalService<>), ServiceLifetime.Singleton);
@@ -49,7 +49,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
 
             var serviceProvider = parentServices.BuildServiceProvider();
-            Assert.Throws<System.NotSupportedException>(() => childServices.BuildChildServiceProvider(serviceProvider));
+            Assert.Throws<System.NotSupportedException>(() => childServices.BuildChildServiceProvider(serviceProvider, s => s.BuildServiceProvider(), ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer));
 
             //var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
 
@@ -62,6 +62,26 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             //Assert.NotNull(parentService);
             //Assert.NotNull(childService);
             //Assert.Same(parentService, childService);
+        }
+
+        [Fact]
+        [Description("Services registered in the parent container as singleton open generics, are delegated from the child service provider to the parent service provider when resolved by the child provider - ensuring the same singleton instance is honoured.")]
+        public void ParentService_SingletonOpenGeneric_DelegatesToParentByDefault()
+        {
+            var parentServices = new ServiceCollection();
+            var descriptorA = new ServiceDescriptor(typeof(IGenericServiceA<>), typeof(GenericAnimalService<>), ServiceLifetime.Singleton);
+
+            parentServices.Add(descriptorA);
+            var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
+
+            var serviceProvider = parentServices.BuildServiceProvider();
+            // Assert.Throws<System.NotSupportedException>(() => childServices.BuildChildServiceProvider(serviceProvider, ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer));
+            var childSp = childServices.BuildChildServiceProvider(serviceProvider, s => s.BuildServiceProvider());
+
+            var parentOpenGeneric = serviceProvider.GetService<IGenericServiceA<string>>();
+            var childOpenGeneric = childSp.GetService<IGenericServiceA<string>>();
+            Assert.Same(parentOpenGeneric, childOpenGeneric);
+
         }
 
 
@@ -99,7 +119,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             }
 
             var parentServiceProvider = parentServices.BuildServiceProvider();
-            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider, s => s.BuildServiceProvider());
 
             using (var childScope = childServiceProvider.CreateScope())
             {
@@ -149,7 +169,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
 
             var parentServiceProvider = parentServices.BuildServiceProvider();
-            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider, s => s.BuildServiceProvider());
 
             using (var childScope = childServiceProvider.CreateScope())
             {
@@ -180,7 +200,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             childServices.AddTransient<AnimalService>();
 
             var parentServiceProvider = parentServices.BuildServiceProvider();
-            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider, s => s.BuildServiceProvider());
 
             Assert.Throws<InvalidOperationException>(() => parentServiceProvider.GetRequiredService<AnimalService>());
             var childService = childServiceProvider.GetRequiredService<AnimalService>();
@@ -211,7 +231,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             childServices.AddScoped<LionServiceWithGenericDependency<DisposableDependencyB>>();
 
             var parentServiceProvider = parentServices.BuildServiceProvider();
-            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider, s => s.BuildServiceProvider());
 
             using (var scope = childServiceProvider.CreateScope())
             {
@@ -245,7 +265,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             childServices.AddTransient<LionService>(sp => new LionService() { SomeProperty = "child" });
 
             var parentServiceProvider = parentServices.BuildServiceProvider();
-            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider, s => s.BuildServiceProvider());
 
             var parentService = parentServiceProvider.GetRequiredService<LionService>();
             var childService = childServiceProvider.GetRequiredService<LionService>();
@@ -285,7 +305,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             //parentServices.AddSingleton<AnimalService>(sp => new DisposableAnimalService() { OnDispose = () => parentSingletonDisposed = true });
 
             var parentServiceProvider = parentServices.BuildServiceProvider();
-            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+            var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider, s => s.BuildServiceProvider());
 
             var parentInstances = parentServiceProvider.GetServices<AnimalService>();
             AssertIEnumerableInstances(parentServiceTypes, parentInstances);

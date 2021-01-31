@@ -108,80 +108,34 @@ this.Services = services.Where(a=>a.Type.Name=="Foo").ToList();
 This was a design decision - it's better to potentially include "too many" services and allow you to filter them yourself, that in is to autoamtically assume child registrations are not "additive" to parent ones, and perform auto substitution / replacement.
 
 
-# Known Limitations
+# Singleton Open Generic Registrations
 
-## Singleton Open Generic Registrations in Parent Container - Not Supported
-
-When singleton open generic types are registered in the parent container (and Microsoft.Extensions.Hosting adds a bunch by default):
+When singleton open generic types are registered in the parent container (and Microsoft.Extensions.Hosting adds a bunch by default), and not also registered again in the child container:
 
 ```
 services.AddSingleton(typeof(IOptions<>), typeof(OptionsManager<T>));
 
 ```
 
-The ideal behaviour (and sadly one that does not currently work) would be that the same instance is returned when resolving from either parent of child container when using the same type params, e.g:
+The default behaviour is that the Child Service Provider will delegate the requests for matching concrete implementations to the parent.
+This gives the desired behaviour that only a singleton instance is created.
+If you also add the same singleton open generic registration again again when configuring a child container - that will override the parent registration, and so a new instance will be created at child container level compared the parent level.
+
+This behaviour does add a small amount of overhead, as requests for certain services must be re-routed from child to the parent at runtime, and this can involve some extra cache lookups or extra work on a cache miss.
+
 
 ```
   // Singleton open generic registered only in parent container
   services.AddSingleton(typeof(IOptions<>), typeof(OptionsManager<T>));
 
   var serviceProvider = services.BuildServiceProvider();
-  var childServiceProvider = BuildChildServiceProvider(serviceProvider); // this will throw (by default) due to unsupported singleton open generic registration
+  var childServiceProvider = BuildChildServiceProvider(serviceProvider); 
 
   var instanceA = parentServiceProvider.GetRequiredService<IOptions<Program>>();
   var instanceB = childServiceProvider.GetRequiredService<IOptions<Program>>();
 
-  Assert.Same(instanceA,instanceB); // your program won't actually reach this far as explained above will be an exception.
+  Assert.Same(instanceA,instanceB);
 
 ```
 
-So, this currently isn't possible (will require some very "creative thinking" at the least)
-
-The issue is that, singleton open generic type registrations, cannot have instances provided from "elsewhere" - the native ServiceProvider will always create them based on the closed type definition when the service is resolved, and because it creates the instance, it will own them, and it will be a different instance from one the parent container might already have.
-So the lack of this capability is at odds with being able to supply the same instance owned from the parent container.
-
-More discussion found here: https://github.com/dotnet/runtime/issues/41050#issuecomment-698642970
-
-This may not be an issue for the majority of services, but it could be.
-Rather than silently exhibit potentially unexpected behaviour, I thought it best to throw an exception when these registrations are encountered so that you can address this yourself in your application by using an enum to select a desired workaround behaviour.
-This is the exception you will see when attempting to build a child container and the parent has singleton open generic registrations:
-
-> Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider.GenericHostTests.Options_WorksInChildContainers(args: [""])
-   Source: GenericHost.cs line 23
-   Duration: 269 ms
-
- > Message: 
-    System.NotSupportedException : Open generic types registered as singletons in the parent container are not supported when using child containers: 
-    ServiceType: Microsoft.Extensions.Options.IOptions`1
-    ServiceType: Microsoft.Extensions.Options.IOptionsMonitor`1
-    ServiceType: Microsoft.Extensions.Options.IOptionsMonitorCache`1
-    ServiceType: Microsoft.Extensions.Logging.ILogger`1
-    ServiceType: Microsoft.Extensions.Logging.Configuration.ILoggerProviderConfiguration`1
-    
- > Stack Trace: 
-    ServiceCollectionExtensions.ThrowUnsupportedDescriptors(List`1 unsupportedDescriptors) line 73
-    ServiceCollectionExtensions.BuildChildServiceProvider(IChildServiceCollection childServiceCollection, IServiceProvider parentServiceProvider) line 52
-    TestHostedService.StartAsync(CancellationToken cancellationToken) line 118
-    Host.StartAsync(CancellationToken cancellationToken)
-    GenericHostTests.Options_WorksInChildContainers(String[] args) line 63
-    --- End of stack trace from previous location where exception was thrown ---
-
-
- How to workaround? Note the call to `AutoPromoteChildDuplicates()`
-
- ```
-   ChildContainer = Services.CreateChildServiceCollection()
-                                         .AutoPromoteChildDuplicates(d => d.IsSingletonOpenGeneric(),
-                                                                  (child) => child.AddOptions())
-                                         .BuildChildServiceProvider(appServices);
-
- ```
-
- This wraps your child registrations, and notices any Singleton Open Generics (due to the predicate provded) that you register at child level,
- and if any of those services also exist at parent level, it removes those from the parent level descriptors in the returned IChildServiceCollection. 
- This basically means, as long as you "re-register" at child level all of the singleton open generic services, you won't get the exception when you build the container becuase you have effectively
- decided to register seperate "child level singletons" for all such services. If you miss any you will still get the exception for the ones you missed, allowing you to address the issue on a case by case basis.
-
- There is no perfect solution here, hopefull the enum comments above are sufficient to explain your options.
-
- If anyone has any bright ideas for a solution to this problem I am all ears.
+Its possible the performance of this feature could be improved but it would rquire changes to MS DI discussed here: https://github.com/dotnet/runtime/issues/41050#issuecomment-698642970
