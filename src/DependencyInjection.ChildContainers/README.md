@@ -13,15 +13,17 @@ Note: This project is still in pre-release and the api's below subject to change
 
 ```cs
 
-    var services = new ServiceCollection();
-    services.AddTransient<LionService>();
+    IServiceCollection parentServiceCollection = new ServiceCollection();
+    parentServiceCollection.AddSingleton<LionService>();
+    var parentServiceProvider = parentServiceCollection.BuildServiceProvider();
 
-    var serviceProvider = services.BuildServiceProvider();
-    var childServiceProvider = services.CreateChildServiceCollection()
-                                       .ConfigureServices(child=>child.AddTransient<LionService>(sp => new LionService() { SomeProperty = "child" }))
-                                       .BuildChildServiceProvider(appServices);    
+    var childServiceProvider = parentServiceProvider.CreateChildServiceProvider(parentServiceCollection, (childServices) =>
+    {
+        childServices.AddSingleton<LionService>(sp => new LionService() { SomeProperty = "child" });
+    }, sp => sp.BuildServiceProvider());
+  
 
-    var parentService = serviceProvider.GetRequiredService<LionService>();
+    var parentService = parentServiceProvider.GetRequiredService<LionService>();
     var childService = childServiceProvider.GetRequiredService<LionService>();
 
     Assert.NotNull(parentService);
@@ -38,48 +40,42 @@ Child containers add some complexity to your solution, but the basic idea is thi
 
 
 1. If you register a service in the parent container, it can also be resolved from the child container without having to re-register it there.
-2. If you do also register a service in the child container, it will override and registration that happens to be in the parent for that service.
-3. If you register a singleton in the parent level, it's the same instance when resolved from the child container - it's not magically a seperate singleton instance for the child container.
-    - If you want a seperate singleton instance per child container, just add a a singleton registration when configuring the child container to override the parent registration.
-
+2. If you register a service in the child container, it will override the registration in the parent if there is one.
+3. If you register a singleton in the parent level, it's the same instance when resolved from the child container. If you want a seperate singleton instance in the child container, you need to register it as a singleton there also.
 
 ## More Detail!
-
-Please also make sure to read section titled "Known Limitations" below.
 
 With the power of child containers comes the complexity of working out where you want to register services.
 
 Register services at different levels:
-    - Just in parent
-    - Just in child
-    - In Parent and in Child
+    - Parent only
+    - Child only
+    - Both
 
 The below sections aims to describe the various behaviours with each of the above scenarios. 
 Tests are in place to verify these behaviours.
 
 
-## Services registered just in parent
-- [x]  can be resolved through parent or child service provider.
+## Parent only
+- [x] Can be resolved through parent or child service provider.
 - [x] are created in the correct container:
-    - [x] `transient` or `scoped` services, should be created by the container they are resolved through.
-        - [x] and therefore, tracked / disposed by that container if they are IDisposable
-        - [x] can have dependencies satisfied by that container (e.g can register a dependency in the child container which overrides the dependency (or lack of) in the parent container when resolving the service through child container)
-    - [x] `singleton` services should be created in parent container. We don't want child container to create seperate instances (the user would have to register the service as a singleton in the child container to "opt in" to a new singleton at child level explicitly)
+    - [x] `transient` or `scoped` services, are owned by the container they are resolved through.
+        - [x] and therefore, tracked / disposed by that container if they are `IDisposable`
+        - [x] can have dependencies satisfied by that container (e.g when resolving the service via the child container, dependencies can be satisfied that are only registered in the child container.
+    - [x] `singleton` services are always created in the parent container. We don't want child container to create duplicate instances.
 
-## Services registered just in child
+## Child only
 - [x] Can not be resolved from parent
 - [x] Can have dependencies satisfied from parent registrations
     - [x] If such a dependency is scoped or transient, it will be created / "owned" by the child container through which the service is resolved.
     - [x] if such a dependency is singleton, it will remain owned by the parent container (or caller if the singleton dependency was registered as an existing instance)
 
-## Services registered in parent and in child
-- [x] parent resolution should get service registered with parent.
-- [x] child resolution should get service registered with child and not the service registered with parent (it overrides parent registration)
-    - [x] This means you always get two different instances, unless the user has registered a singleton instance, or is registering factory functions that do funny lifetime stuff via capturing shared instances.
- - [x] IEnumerable<Service>` resolution in parent should only return services from parent registrations.
- - [x] IEnumerable<Service>` resolution in child should return services from parent and child registrations (concatenation of both)
-     - This does mean its not possible to directly "replace" a service registered in the parent, by registering it again in the child, when its resolved as IEnumerable<TService>() - as both (the concatenation) will be included in the IEnumerable. Registering a service in a child container only overrides the parent registration when resolving an instance of the type, not an IEnumerable of instances for the type.
-
+## Both
+- [x] Resolving service using parent container results in service from parent lervel registration.
+- [x] Resolving service using child container results in service from child level registration, not parent level registration (it overrides parent registration)
+- [x] Resolving `IEnumerable<Service>` from the parent container should only return services relating to parent registrations in the IEnumerable.
+- [x] Resolving `IEnumerable<Service>` from the child container should return services relating to both parent (inherited) and child registrations (concatenation of both)
+     - This does mean its not possible to directly "replace" a parent registration, by registering it again in the child, when its resolved as IEnumerable<TService>() - both services will be yielded by the IEnumerable. Registering a service in a child container only overrides the parent registration when resolving an instance of the type, not an IEnumerable of instances for the type.
 
 ## Notes on Overriding services
 
@@ -105,6 +101,8 @@ this.Services = services.Where(a=>a.Type.Name=="Foo").ToList();
 
 ```
 
+Or you can attempt to manipulate the IServiceCollection's before the containers are built.
+
 This was a design decision - it's better to potentially include "too many" services and allow you to filter them yourself, that in is to autoamtically assume child registrations are not "additive" to parent ones, and perform auto substitution / replacement.
 
 
@@ -117,14 +115,14 @@ services.AddSingleton(typeof(IOptions<>), typeof(OptionsManager<T>));
 
 ```
 
-The default behaviour is that the Child Service Provider will delegate the requests for matching concrete implementations to the parent.
-This gives the desired behaviour that only a singleton instance is created.
-If you also add the same singleton open generic registration again again when configuring a child container - that will override the parent registration, and so a new instance will be created at child container level compared the parent level.
+The default behaviour is that the Child Service Provider will intercept requests for such types and will delegate / forward the resolution of such requests to the parent container.
 
-This behaviour does add a small amount of overhead, as requests for certain services must be re-routed from child to the parent at runtime, and this can involve some extra cache lookups or extra work on a cache miss.
+This gives the desired behaviour that only a single instance for the singleton open generic type registration, is created.
+If you also register the same singleton open generic type again when configuring a child container - that will override the parent registration, and so a seperate singleton instance will be created at child container level.
 
+This feature does add a small amount of overhead, as requests for certain services must be re-routed from child to the parent at runtime, and this can involve some extra cache lookups and introspection of types, or extra work on a cache miss etc.
 
-```
+```csharp
   // Singleton open generic registered only in parent container
   services.AddSingleton(typeof(IOptions<>), typeof(OptionsManager<T>));
 

@@ -35,6 +35,14 @@ namespace Dazinator.Extensions.DependencyInjection
             return childContainer;
         }
 
+        public static IServiceProvider CreateChildServiceProvider(this IServiceProvider parentServiceProvider, IServiceCollection parentServices, Action<IChildServiceCollection> configureChildServices, Func<IServiceCollection, IServiceProvider> buildChildServiceProvider, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
+        {
+            var childServices = parentServices.CreateChildServiceCollection();
+            configureChildServices?.Invoke(childServices);
+            var childContainer = childServices.BuildChildServiceProvider(parentServiceProvider, s => buildChildServiceProvider(s), behaviour);
+            return childContainer;
+        }
+
 
         public static async Task<IServiceProvider> CreateChildServiceProviderAsync(
            this IServiceCollection parentServices, IServiceProvider parentServiceProvider, Func<IChildServiceCollection, Task> configureAsync, Func<IServiceCollection, IServiceProvider> buildSp, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)

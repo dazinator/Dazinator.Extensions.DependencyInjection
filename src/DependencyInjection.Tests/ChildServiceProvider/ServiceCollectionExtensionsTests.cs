@@ -13,6 +13,19 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
             Assert.NotNull(childServiceCollection);
         }
 
+        [Fact]
+        public void CreateChildServiceProvider()
+        {
+            IServiceCollection parentServiceCollection = new ServiceCollection();
+            parentServiceCollection.AddTransient<ServiceCollectionExtensionsTests>();
+            var parentServiceProvider = parentServiceCollection.BuildServiceProvider();
+
+            var childServiceProvider = parentServiceProvider.CreateChildServiceProvider(parentServiceCollection, (childServices) =>
+            {
+                childServices.AddTransient<ServiceCollectionExtensionsTests>();
+            }, sp => sp.BuildServiceProvider());
+        }
+
 
     }
 }
