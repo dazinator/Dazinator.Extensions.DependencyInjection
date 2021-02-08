@@ -1,6 +1,6 @@
 ## Child Containers
 
-Allows you to build "child containers" using the normal `IServiceCollection` interface, and backed by the native `ServiceProvider` implementation from microsoft.
+Allows you to build "child containers" using the normal `IServiceCollection` interface, and backed by an `IServiceProvider` implementation of your choice.
 This means there is no need to adopt a third party DI container just to gain this feature - if thats your only reason for switching.
 
 ## Getting started
