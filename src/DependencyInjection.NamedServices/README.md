@@ -79,6 +79,8 @@ to avoid the sort of code above where classes are having to "request" (locate) a
 Note: You should be careful though, regarding the following:
 
 - You don't want to allow services that are registered as `singleton`, to be handed dependencies that are registered as `scoped`.
+- You don't want to call `sp.GetNamed<Claws>("D")` to obtain a transient if its `IDisposable` as that instance will not be disposed for you when using the above technique.
+
 
 ## Singletons
 
