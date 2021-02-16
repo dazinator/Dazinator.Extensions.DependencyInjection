@@ -54,50 +54,6 @@ public MyController(NamedServiceResolver<AnimalService> namedServices)
 
 ```
 
-Note: Depending upon your case, you can also use the following technique when registering services, to wire them up with certain named dependencies,
-to avoid the sort of code above where classes are having to "request" (locate) a service with a specific name - keeping them oblivious to the fact that they are using "named" dependencies at all:
-
-```csharp
-    var services = new ServiceCollection();
-    // register your named variations / flavours of some dependency:
-    services.AddNamed<Claws>(names =>
-    {
-        names.AddTransient("D");
-        names.AddScoped("E", (sp)=>new SharpClaws());
-    });
-
-    // register your services, and wire them up with the named variation of the dependency that they need, explicitly.   
-   services.AddTransient<Bear>(sp=>new HungryBear(sp.GetNamed<Claws>("E")));
-    services.AddTransient<Bear>(sp=>new HungryBear(sp.GetNamed<Claws>("E")));
-
-    // later.. 
-    var bears == sp.GetRequiredService<IEnumerable<Bear>>();
-    // bears contains 1x LazyBear with `Claws` and 1x HungryBear with `SharpClaws` (Claws are Transiently created, where as SharpClaws are Scoped)
-
-```
-
-Note: You should be careful though, regarding the following:
-
-- You don't want to allow services that are registered as `singleton`, to be handed dependencies that are registered as `scoped`.
-- You don't want to call `sp.GetNamed<Claws>("D")` to obtain a transient if its `IDisposable` as that instance will not be disposed for you when using the above technique. You can workaround that by doing something like:
-
-```csharp
-services.AddTransient<Bear>(sp=> { 
-  var disposableClaws = sp.GetNamed<Claws>("E");
-  Action onDispose = ()=> disposableClaws.Dispose();
-  var service = new HungryBear(disposableClaws, onDispose); 
-
-  // HungryBear service must implement IDisposable and call onDispose action when it's disposed for this pattern to work.
-  return service;
-});
-
-```
-
-The above pattern basically means:
-
-1. The service (in this case `HungryBear`) doesn't need to know its working with a `named` dependency - so it doesn't need to request / resolve the dependency with a given name and just uses ordinary DI.
-2. The service (`HungryBear`) doesn't need to care about disposing of the named depenedencies directly, however it does need to implement IDisposable and call a callback to have those dependencies disposed once it is disposed.
-
 ## Singletons
 
 When you register named singletons, they are Singleton PER NAMED registration.
@@ -291,3 +247,52 @@ For example:
       });
 
 ```
+
+## Advanced Patterns
+
+Depending upon your case, you may be able to use the following technique when registering services, to wire them up with particular named dependencies,
+to avoid the sort of code leaking into the classes themselves where they are having to "request" (locate) a service with a specific name - keeping your services completely oblivious to the fact that they are using "named" dependencies at all:
+
+```csharp
+    var services = new ServiceCollection();
+    // register your named variations / flavours of some dependency:
+    services.AddNamed<Claws>(names =>
+    {
+        names.AddTransient("D");
+        names.AddScoped("E", (sp)=>new SharpClaws());
+    });
+
+    // register your services, and wire them up with the named variation of the dependency that they need, explicitly.   
+    services.AddTransient<Bear>(sp=>new HungryBear(sp.GetNamed<Claws>("D")));
+    services.AddTransient<Bear>(sp=>new HungryBear(sp.GetNamed<Claws>("E")));
+
+    // later.. 
+    var bears == sp.GetRequiredService<IEnumerable<Bear>>();
+    // bears contains 1x LazyBear with `Claws` and 1x HungryBear with `SharpClaws` (Claws are Transiently created, where as SharpClaws are Scoped)
+
+```
+
+Note: You should be careful though, regarding the following:
+
+- You don't want to allow services that are registered as `singleton`, to be handed dependencies that are registered as `scoped`.
+- You don't want to call `sp.GetNamed<Claws>("D")` to obtain a transient if its `IDisposable` as that instance will not be disposed for you when using the above technique. 
+
+You can workaround the disposal issue by doing something like:
+
+```csharp
+services.AddTransient<Bear>(sp=> { 
+  var disposableClaws = sp.GetNamed<Claws>("E");
+  Action onDispose = ()=> disposableClaws.Dispose(); // ensure the named IDisposable gets disposed.
+  var service = new HungryBear(disposableClaws, onDispose); 
+
+  // HungryBear service must implement `IDisposable` and call the onDispose action when it's disposed for this pattern to work.
+  return service;
+});
+
+```
+
+The above pattern basically means:
+
+1. The service (in this case `HungryBear`) doesn't need to know its working with a `named` dependency - so it doesn't need to request / resolve the dependency with a given name and just uses ordinary DI.
+2. The service (`HungryBear`) doesn't need to care about disposing of the named depenedencies directly. This adheres to the standard pattern in that when IDisposables are directly injected into a service, its not for that service to dispose of them. However 
+it does need to implement IDisposable and call that callback on disposal, to make sure its dependencies are disposed - so the act of disposing the injected service is now indirectly being done via the callback. This is less of a code smell than having the service call Dispose on its dependency directly as the service doesn't need to know what the callback is doing.
