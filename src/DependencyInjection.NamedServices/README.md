@@ -281,9 +281,9 @@ You can workaround the disposal issue by doing something like:
 
 ```csharp
 services.AddTransient<Bear>(sp=> { 
-  var disposableClaws = sp.GetNamed<Claws>("E");
-  Action onDispose = ()=> disposableClaws.Dispose(); // ensure the named IDisposable gets disposed.
-  var service = new HungryBear(disposableClaws, onDispose); 
+  var disposableTransientClaws = sp.GetNamed<Claws>("D");
+  Action onDispose = ()=> disposableTransientClaws.Dispose(); // ensure the named IDisposable gets disposed.
+  var service = new HungryBear(disposableTransientClaws, onDispose); 
 
   // HungryBear service must implement `IDisposable` and call the onDispose action when it's disposed for this pattern to work.
   return service;
