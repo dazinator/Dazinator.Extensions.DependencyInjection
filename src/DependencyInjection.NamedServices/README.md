@@ -67,7 +67,7 @@ to avoid the sort of code above where classes are having to "request" (locate) a
     });
 
     // register your services, and wire them up with the named variation of the dependency that they need, explicitly.   
-    services.AddTransient<Bear>(sp=>new LazyBear(sp.GetNamed<Claws>("D")));
+   services.AddTransient<Bear>(sp=>new HungryBear(sp.GetNamed<Claws>("E")));
     services.AddTransient<Bear>(sp=>new HungryBear(sp.GetNamed<Claws>("E")));
 
     // later.. 
@@ -79,8 +79,25 @@ to avoid the sort of code above where classes are having to "request" (locate) a
 Note: You should be careful though, regarding the following:
 
 - You don't want to allow services that are registered as `singleton`, to be handed dependencies that are registered as `scoped`.
-- You don't want to call `sp.GetNamed<Claws>("D")` to obtain a transient if its `IDisposable` as that instance will not be disposed for you when using the above technique.
+- You don't want to call `sp.GetNamed<Claws>("D")` to obtain a transient if its `IDisposable` as that instance will not be disposed for you when using the above technique. You can workaround that by doing something like:
 
+```csharp
+services.AddTransient<Bear>(sp=> { 
+  var disposableClaws = sp.GetNamed<Claws>("E");
+  var service = new HungryBear(disposableClaws); 
+  // HungryBear service must implement IDisposable for the folowing pattern to work.
+  var disposableWrapper = new DisposableWrapper<HungryBear>(service,disposableClaws)  // will decorate the service, but will dispose of the disposableClaws named dependency when it gets disposed.
+  return disposableWrapper;
+});
+
+```
+
+The above pattern basically means:
+
+1. The service (in this case `HungryBear`) doesn't need to know its working with a `named` dependency - so it doesn't need to request / resolve the dependency with a given name.
+2. The service (`HungryBear`) doesn't need to care about disposing of the named depenedency if its IDisposable.
+3. The `DisposableWrapper` will dispose of `HungryBear` and its dependency together, one after the other when it gets disposed.
+4. The container implementation will dispose of the `DisposableWrapper` when the container is Disposed.
 
 ## Singletons
 
