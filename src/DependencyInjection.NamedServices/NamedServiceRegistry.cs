@@ -117,27 +117,30 @@ namespace Dazinator.Extensions.DependencyInjection
 
                 if (string.IsNullOrEmpty(result.ForwardName) && result.NewRegistration == null)
                 {
-                    // this shouldn't happen as we shouldn't allow the object to be created in such a state with both null properties.
+                    // The registration with this name wasn't satisfied.
+                    // caller should get exception as if no service registered with this name.
                     throw new KeyNotFoundException(name);
                 }
 
-                // yep, so we now need to add this to our named services cache.
+                // We have late registration to add.
                 _namedRegistrationsLock.EnterWriteLock();
                 try
                 {
+
                     if (!string.IsNullOrEmpty(result.ForwardName))
                     {
                         ForwardName(name, result.ForwardName);
-                        if (result.NewRegistration != null)
-                        {
-                            _namedRegistrations.Add(result.ForwardName, result.NewRegistration);
-                            return result.NewRegistration;
-                        }
-                        return _namedRegistrations[result.ForwardName];
                     }
 
-                    _namedRegistrations.Add(name, result.NewRegistration);
-                    return result.NewRegistration;
+                    var regName = result.ForwardName ?? name;
+                    if (result.NewRegistration != null)
+                    {
+                        _namedRegistrations.Add(regName, result.NewRegistration);
+                        return result.NewRegistration;
+                    }
+
+                    return _namedRegistrations[regName];
+                   
                 }
                 finally
                 {
