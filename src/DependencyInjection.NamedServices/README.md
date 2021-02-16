@@ -84,20 +84,19 @@ Note: You should be careful though, regarding the following:
 ```csharp
 services.AddTransient<Bear>(sp=> { 
   var disposableClaws = sp.GetNamed<Claws>("E");
-  var service = new HungryBear(disposableClaws); 
-  // HungryBear service must implement IDisposable for the folowing pattern to work.
-  var disposableWrapper = new DisposableWrapper<HungryBear>(service,disposableClaws)  // will decorate the service, but will dispose of the disposableClaws named dependency when it gets disposed.
-  return disposableWrapper;
+  Action onDispose = ()=> disposableClaws.Dispose();
+  var service = new HungryBear(disposableClaws, onDispose); 
+
+  // HungryBear service must implement IDisposable and call onDispose action when it's disposed for this pattern to work.
+  return service;
 });
 
 ```
 
 The above pattern basically means:
 
-1. The service (in this case `HungryBear`) doesn't need to know its working with a `named` dependency - so it doesn't need to request / resolve the dependency with a given name.
-2. The service (`HungryBear`) doesn't need to care about disposing of the named depenedency if its IDisposable.
-3. The `DisposableWrapper` will dispose of `HungryBear` and its dependency together, one after the other when it gets disposed.
-4. The container implementation will dispose of the `DisposableWrapper` when the container is Disposed.
+1. The service (in this case `HungryBear`) doesn't need to know its working with a `named` dependency - so it doesn't need to request / resolve the dependency with a given name and just uses ordinary DI.
+2. The service (`HungryBear`) doesn't need to care about disposing of the named depenedencies directly, however it does need to implement IDisposable and call a callback to have those dependencies disposed once it is disposed.
 
 ## Singletons
 
