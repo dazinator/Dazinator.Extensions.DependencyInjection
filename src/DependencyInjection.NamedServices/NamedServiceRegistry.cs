@@ -140,7 +140,7 @@ namespace Dazinator.Extensions.DependencyInjection
                     }
 
                     return _namedRegistrations[regName];
-                   
+
                 }
                 finally
                 {
