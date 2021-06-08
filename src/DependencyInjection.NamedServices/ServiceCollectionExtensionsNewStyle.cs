@@ -42,7 +42,7 @@ namespace Dazinator.Extensions.DependencyInjection
         {
 
             var namedDescriptorType = typeof(NamedServiceDescriptor);
-            var namedRegistrationsGroupedByService = services.Where(s => s.GetType() == namedDescriptorType).GroupBy(s => s.ServiceType).Select(a => a.Key).ToList();
+            var namedRegistrationsGroupedByService = services.Where(s => s.GetType() == namedDescriptorType && s.ServiceType == typeof(TServiceType)).Select(a => a.ServiceType).ToList();
 
             foreach (var namedServiceType in namedRegistrationsGroupedByService)
             {
