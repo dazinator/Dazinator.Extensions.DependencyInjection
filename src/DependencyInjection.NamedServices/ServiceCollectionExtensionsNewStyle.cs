@@ -91,7 +91,7 @@ namespace Dazinator.Extensions.DependencyInjection
                 var loadMethod = regConcreteType.GetMethod(nameof(NamedServiceRegistry<Type>.LoadFromServices));
                 var loadServicesArgs = new object[] { services };
                 loadMethod.Invoke(registryInstance, loadServicesArgs);
-                services.Remove(existing);// no longer needed - this was a placeholder.
+               // services.Remove(existing);// no longer needed - this was a placeholder.
             }
 
 
