@@ -32,6 +32,33 @@ namespace Dazinator.Extensions.DependencyInjection
 
         }
 
+        /// <summary>
+        /// Collate existing named service registrations together for the specified service type only.
+        /// to build Named service registries, removing them from IServiceCollection in the process.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static IServiceCollection CollateNamed<TServiceType>(this IServiceCollection services)
+        {
+
+            var namedDescriptorType = typeof(NamedServiceDescriptor);
+            var namedRegistrationsGroupedByService = services.Where(s => s.GetType() == namedDescriptorType).GroupBy(s => s.ServiceType).Select(a => a.Key).ToList();
+
+            foreach (var namedServiceType in namedRegistrationsGroupedByService)
+            {
+                if (namedServiceType == null)
+                {
+                    continue;
+                }
+
+                EnsureNamedRegistryLoaded(namedServiceType, services);
+            }
+
+            return services;
+
+        }
+
+
         private static readonly Type _regGenericType = typeof(NamedServiceRegistry<>);
 
         private static void EnsureNamedRegistryLoaded(Type serviceType, IServiceCollection services)
