@@ -1,6 +1,7 @@
 namespace Dazinator.Extensions.DependencyInjection
 {
     using System;
+    using System.Reflection;
 
     public static class TypeExtensions
     {
@@ -42,7 +43,5 @@ namespace Dazinator.Extensions.DependencyInjection
         }
 
     }
-
-
 
 }

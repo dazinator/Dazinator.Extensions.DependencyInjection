@@ -54,6 +54,54 @@ public MyController(NamedServiceResolver<AnimalService> namedServices)
 
 ```
 
+## Alternative style for registering named services
+
+The method shown above, shows registering all of the named variations of a service type, within a single callback:
+
+```csharp
+ services.AddNamed<IJob>(names => {      
+        names.AddSingleton<FooJob>("Foo");
+        names.AddSingleton<BarJob>("Bar");
+});
+
+```
+
+There is an alternative method. 
+You use the extensions methods that take a `name` argument directly with the `IServiceCollection`:
+
+```csharp
+// Module A
+   services.AddSingleton<IJob, FooJob>("Foo");
+
+// Module B
+  services.AddTransient<IJob, BarJob>("Bar");
+``` csharp
+
+
+But... if you use this style, then you must ensure that before your container is built, 
+you call a method to collate these registrations into the actual registration graph required:
+
+```csharp
+services.CollateNamed();
+```
+
+You can combine both styles.
+
+```csharp
+// Module A
+ services.AddSingleton<IJob, FooJob>("A");
+
+ // Some other location
+ services.AddNamed<IJob>(names => {      
+        names.AddSingleton<FooJob>("Foo");
+        names.AddSingleton<BarJob>("Bar");
+});
+
+// before container built:
+services.CollateNamed();
+// all good - you'll be able to resolve "A", "Foo" and "Bar".
+```
+
 ## Singletons
 
 When you register named singletons, they are Singleton PER NAMED registration.

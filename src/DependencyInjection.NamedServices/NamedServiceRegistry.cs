@@ -2,6 +2,7 @@ namespace Dazinator.Extensions.DependencyInjection
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using Microsoft.Extensions.DependencyInjection;
 
@@ -24,6 +25,8 @@ namespace Dazinator.Extensions.DependencyInjection
             _namedRegistrations = new Dictionary<string, NamedServiceRegistration<TService>>();
             _services = services;
             _namedRegistrationFactory = new NamedServiceRegistrationFactory<TService>(GetServiceProvider);
+            // hydrate the registry from any existing named registrations in the IServiceCollection
+            LoadFromServices(services);
         }
 
         public IServiceProvider ServiceProvider { get; set; }
@@ -153,6 +156,8 @@ namespace Dazinator.Extensions.DependencyInjection
                 _namedRegistrationsLock.ExitUpgradeableReadLock();
             }
         }
+
+        public bool HasRegistrations => _namedRegistrations.Count > 0;
 
         #region Add
         public void Add<TImplementationType>(ServiceLifetime lifetime = ServiceLifetime.Transient, Func<IServiceProvider, TImplementationType> factoryFunc = null)
@@ -375,6 +380,51 @@ namespace Dazinator.Extensions.DependencyInjection
             }
 
         }
+
+
+        /// <summary>
+        /// Load existing named service registrations in the IServiceCollection, into this registry, removing them in the process from the IServiceCollection.
+        /// </summary>
+        public void LoadFromServices(IServiceCollection services)
+        {
+            if (services == null)
+            {
+                return;
+            }
+
+            var namedDescriptorType = typeof(NamedServiceDescriptor);
+            var namedServiceRegistrations = services.Where(s => s.GetType() == namedDescriptorType && s.ServiceType == typeof(TService)).Cast<NamedServiceDescriptor>().ToList();
+
+            foreach (var item in namedServiceRegistrations)
+            {
+                //Todo: don't like having to do casts here..
+                if (!_services.Remove(item))
+                {
+                    throw new InvalidOperationException($"Could not remove registration {item?.Name} from service collection when promoting to named service registry.");
+                }
+
+                if (item.ImplementationInstance != null)
+                {
+                    AddRegistration(item.Name, (TService)item.ImplementationInstance, false);
+                    continue;
+                }
+
+                if (item.ImplementationFactory != null)
+                {
+                    AddRegistration(item.Name, (sp) => (TService)item.ImplementationFactory(sp), item.Lifetime);
+                    continue;
+                }
+
+                if (item.ImplementationType != null)
+                {
+                    AddRegistration(item.Name, item.ImplementationType, item.Lifetime);
+                    continue;
+                }
+
+                throw new InvalidOperationException($"Could not process named registration {item.Name}");
+            }
+        }
+
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls

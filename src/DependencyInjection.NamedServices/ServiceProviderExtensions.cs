@@ -1,6 +1,7 @@
 namespace Dazinator.Extensions.DependencyInjection
 {
     using System;
+    using System.Reflection;
     using Microsoft.Extensions.DependencyInjection;
 
     public static partial class ServiceProviderExtensions
@@ -17,5 +18,4 @@ namespace Dazinator.Extensions.DependencyInjection
             return func;
         }
     }
-
 }

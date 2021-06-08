@@ -1,14 +1,16 @@
 namespace Dazinator.Extensions.DependencyInjection
 {
     using System;
+    using System.Linq;
     using Microsoft.Extensions.DependencyInjection;
 
     public static partial class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddNamed<TService>(this IServiceCollection services, Action<NamedServiceRegistry<TService>> configure)
+        public static IServiceCollection AddNamed<TService>(this IServiceCollection services, Action<NamedServiceRegistry<TService>> configure = null)
         {
+            // look for existing registry
             var registry = new NamedServiceRegistry<TService>(services);
-            configure(registry);
+            configure?.Invoke(registry);
 
             //var registry = new NamedServiceRegistry<TService>(()=> {
 
@@ -21,6 +23,12 @@ namespace Dazinator.Extensions.DependencyInjection
 
             //});
 
+            return AddNamedServicesRegistry(services, registry);
+        }
+
+        public static IServiceCollection AddNamedServicesRegistry<TService>(IServiceCollection services, NamedServiceRegistry<TService> registry)
+        {
+            services.AddSingleton(registry); // this is added so we can discover the instance later from this registration. The registration isn't used for actual DI is its overidden immediately below.
             services.AddSingleton(sp =>
             {
                 registry.ServiceProvider = sp;
@@ -38,6 +46,7 @@ namespace Dazinator.Extensions.DependencyInjection
 
             return services;
         }
+
     }
 
 }
