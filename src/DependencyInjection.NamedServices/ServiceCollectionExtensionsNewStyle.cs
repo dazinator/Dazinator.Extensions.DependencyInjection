@@ -142,6 +142,13 @@ namespace Dazinator.Extensions.DependencyInjection
 
         #region Type
 
+        /// <summary>
+        /// Register a named singleton service.
+        /// </summary>
+        /// <typeparam name="TService">The type of service to register as well as the implementation type.</typeparam>
+        /// <param name="services"></param>
+        /// <param name="name">The name for the named service registration.</param>
+        /// <returns></returns>
         public static IServiceCollection AddSingleton<TService>(this IServiceCollection services, string name)
         {
             var descriptor = new NamedServiceDescriptor(name, typeof(TService), typeof(TService), ServiceLifetime.Singleton);
@@ -154,7 +161,7 @@ namespace Dazinator.Extensions.DependencyInjection
         /// </summary>
         /// <param name="services"></param>
         /// <param name="name">The name for the named service registration.</param>
-        /// <param name="type">The type of service to register.</param>
+        /// <param name="type">The type of service to register as well as the implementation type.</param>
         /// <returns></returns>
         public static IServiceCollection AddSingleton(this IServiceCollection services, string name, Type type)
         {
@@ -166,14 +173,29 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <summary>
         /// Register a named singleton service.
         /// </summary>
-        /// <typeparam name="TService">The type of service to register.</typeparam>
-        /// <typeparam name="TImplementation">The implementation to use for this name</typeparam>
+        /// <typeparam name="TService">The service type.</typeparam>
+        /// <typeparam name="TImplementation">The implementation type.</typeparam>
         /// <param name="services"></param>
         /// <param name="name">The name for the named service registration.</param>
         /// <returns></returns>
         public static IServiceCollection AddSingleton<TService, TImplementation>(this IServiceCollection services, string name)
         {
             var descriptor = new NamedServiceDescriptor(name, typeof(TService), typeof(TImplementation), ServiceLifetime.Singleton);
+            services.Add(descriptor);
+            return services;
+        }
+
+        /// <summary>
+        /// Register a named singleton service.
+        /// </summary>
+        /// <typeparam name="TService">The service type.</typeparam>
+        /// <param name="services"></param>
+        /// <param name="name"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddSingleton<TService>(this IServiceCollection services, string name, Type implementationType)
+        {
+            var descriptor = new NamedServiceDescriptor(name, typeof(TService), implementationType, ServiceLifetime.Singleton);
             services.Add(descriptor);
             return services;
         }
