@@ -10,14 +10,13 @@ namespace DependencyInjection.Tests.Named
     {
 
         [Fact]
-        public void Can_AddNamedServices_UsingCollateMethod()
+        public void Can_AddNamedServices_UsingServiceCollectionExtensionsMethods()
         {
 
             var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
             services.AddSingleton<AnimalService>("Foo");
             services.AddSingleton<AnimalService, LionService>("Lion");
 
-            services.CollateNamed();
             var sp = services.BuildServiceProvider();
 
 
@@ -30,7 +29,7 @@ namespace DependencyInjection.Tests.Named
         }
 
         [Fact]
-        public void IndividualNamedServiceRegistrations_Are_Preserved()
+        public void Can_AddNamedServices_UsingServiceCollectionExtensionsMethods_And_CallbackBuilderMethod()
         {
 
             var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
@@ -43,9 +42,7 @@ namespace DependencyInjection.Tests.Named
                 names.AddTransient<LionService>("AnotherLion");
             });
 
-            services.CollateNamed();
             var sp = services.BuildServiceProvider();
-
 
             var namedServiceFactory = sp.GetRequiredService<Func<string, AnimalService>>();
             var foo = namedServiceFactory("Foo");
@@ -59,7 +56,7 @@ namespace DependencyInjection.Tests.Named
         }
 
         [Fact]
-        public void IndividualNamedServiceRegistrations_Cannot_Be_After_ConfigureCallback()
+        public void Can_AddNamedServices_UsingServiceCollectionExtensionsMethods_And_CallbackBuilderMethod_InDifferentOrder()
         {
 
             var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
@@ -71,7 +68,6 @@ namespace DependencyInjection.Tests.Named
 
             services.AddSingleton<AnimalService>("Foo");
 
-            services.CollateNamed();
             var sp = services.BuildServiceProvider();
 
             var namedServiceFactory = sp.GetRequiredService<Func<string, AnimalService>>();

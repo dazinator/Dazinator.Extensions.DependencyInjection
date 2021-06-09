@@ -9,22 +9,29 @@ namespace Dazinator.Extensions.DependencyInjection
         public static IServiceCollection AddNamed<TService>(this IServiceCollection services, Action<NamedServiceRegistry<TService>> configure = null)
         {
             // look for existing registry
-            var registry = new NamedServiceRegistry<TService>(services);
+            var registry = GetOrAddRegistry<TService>(services);
             configure?.Invoke(registry);
-
-            //var registry = new NamedServiceRegistry<TService>(()=> {
-
-            //    services.AddSingleton(sp =>
-            //    {
-            //        registry.
-            //        configure(registry);
-            //        return registry;
-            //    });
-
-            //});
-
-            return AddNamedServicesRegistry(services, registry);
+            return services;
         }
+
+        internal static NamedServiceRegistry<TService> GetOrAddRegistry<TService>(IServiceCollection services)
+        {
+            var regType = typeof(NamedServiceRegistry<TService>);
+            var existing = services.LastOrDefault(s => s.ServiceType == regType && s.ImplementationInstance != null);
+            if (existing == null)
+            {
+                var reg = new NamedServiceRegistry<TService>(services);
+                AddNamedServicesRegistry<TService>(services, reg);
+                return reg;
+            }
+            else
+            {
+                var registryInstance = existing.ImplementationInstance as NamedServiceRegistry<TService>;
+                return registryInstance;
+            }
+
+        }
+
 
         public static IServiceCollection AddNamedServicesRegistry<TService>(IServiceCollection services, NamedServiceRegistry<TService> registry)
         {

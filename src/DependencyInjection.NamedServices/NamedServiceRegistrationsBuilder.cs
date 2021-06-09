@@ -4,7 +4,8 @@ namespace Dazinator.Extensions.DependencyInjection
     using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
-    /// A utility class that can be used to constrain named service registrations to a particular service type of <typeparamref name="TService"/>.
+    /// A utility class that can be used to constrain named service registrations to a particular service type
+    /// of <typeparamref name="TService"/>.
     /// </summary>
     /// <typeparam name="TService"></typeparam>
     public class NamedServiceRegistrationsBuilder<TService>
@@ -44,6 +45,7 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <param name="name">The name for the job type.</param>
         /// <returns></returns>
         public NamedServiceRegistrationsBuilder<TService> AddSingleton<TImplementationType>(string name)
+            where TImplementationType : TService
         {
             Services.AddSingleton<TService, TImplementationType>(name);
             return this;
@@ -59,7 +61,7 @@ namespace Dazinator.Extensions.DependencyInjection
         public NamedServiceRegistrationsBuilder<TService> AddSingleton(string name, Type implementationType)
         {
             // todo: use generic overload once dependnecy updated.
-            Services.AddSingleton(name, typeof(IJob), implementationType);
+            Services.AddSingleton<TService>(name, implementationType);
             return this;
         }
 
@@ -75,9 +77,9 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <param name="name">The name for the job type.</param>
         /// <param name="factory"></param>
         /// <returns></returns>
-        public NamedServiceRegistrationsBuilder<TService> AddSingleton(string name, Func<IServiceProvider, IJob> factory)
+        public NamedServiceRegistrationsBuilder<TService> AddSingleton(string name, Func<IServiceProvider, TService> factory)
         {
-            Services.AddSingleton<IJob>(name, (sp) => factory(sp));
+            Services.AddSingleton<TService>(name, (sp) => factory(sp));
             return this;
         }
 
@@ -98,8 +100,9 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <param name="name">The name for the job type.</param>
         /// <returns></returns>
         public NamedServiceRegistrationsBuilder<TService> AddScoped<TImplementationType>(string name)
+            where TImplementationType : TService
         {
-            Services.AddScoped<IJob, TImplementationType>(name);
+            Services.AddScoped<TService, TImplementationType>(name);
             return this;
         }
 
@@ -112,7 +115,7 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <returns></returns>
         public NamedServiceRegistrationsBuilder<TService> AddScoped(string name, Type implementationType)
         {
-            Services.AddScoped(name, typeof(IJob), implementationType);
+            Services.AddScoped<TService>(name, implementationType);
             return this;
 
         }
@@ -129,9 +132,9 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <param name="name">The name for the named service registration.</param>
         /// <param name="factory">Factory method that returns implementation instance.</param>
         /// <returns></returns>
-        public NamedServiceRegistrationsBuilder<TService> AddScoped(string name, Func<IServiceProvider, IJob> factory)
+        public NamedServiceRegistrationsBuilder<TService> AddScoped(string name, Func<IServiceProvider, TService> factory)
         {
-            Services.AddScoped<IJob>(name, (sp) => factory(sp));
+            Services.AddScoped<TService>(name, (sp) => factory(sp));
             return this;
         }
 
@@ -151,8 +154,9 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <param name="name">The name for the job type.</param>
         /// <returns></returns>
         public NamedServiceRegistrationsBuilder<TService> AddTransient<TImplementationType>(string name)
+            where TImplementationType : TService
         {
-            Services.AddTransient<IJob, TImplementationType>(name);
+            Services.AddTransient<TService, TImplementationType>(name);
             return this;
 
         }
@@ -166,7 +170,7 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <returns></returns>
         public NamedServiceRegistrationsBuilder<TService> AddTransient(string name, Type implementationType)
         {
-            Services.AddTransient(name, typeof(IJob), implementationType);
+            Services.AddTransient<TService>(name, implementationType);
             return this;
         }
 
@@ -182,20 +186,15 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <param name="name">The name for the named service registration.</param>
         /// <param name="factory">Factory method that returns implementation instance.</param>
         /// <returns></returns>
-        public NamedServiceRegistrationsBuilder<TService> AddTransient(string name, Func<IServiceProvider, IJob> factory)
+        public NamedServiceRegistrationsBuilder<TService> AddTransient(string name, Func<IServiceProvider, TService> factory)
         {
-            Services.AddTransient<IJob>(name, (sp) => factory(sp));
+            Services.AddTransient<TService>(name, (sp) => factory(sp));
             return this;
         }
 
         #endregion
 
-        #endregion
-
-        /// <summary>
-        /// Must call this before the container is built.
-        /// </summary>
-        public IServiceCollection Build() => Services.CollateNamed<TService>();
+        #endregion      
 
     }
 

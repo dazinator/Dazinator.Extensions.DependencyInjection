@@ -25,8 +25,6 @@ namespace Dazinator.Extensions.DependencyInjection
             _namedRegistrations = new Dictionary<string, NamedServiceRegistration<TService>>();
             _services = services;
             _namedRegistrationFactory = new NamedServiceRegistrationFactory<TService>(GetServiceProvider);
-            // hydrate the registry from any existing named registrations in the IServiceCollection
-            LoadFromServices(services);
         }
 
         public IServiceProvider ServiceProvider { get; set; }
@@ -208,6 +206,8 @@ namespace Dazinator.Extensions.DependencyInjection
         public void AddSingleton<TConcreteType>()
             where TConcreteType : TService => AddSingleton<TConcreteType>(string.Empty);
 
+        public void AddSingleton(Type implementationType) => AddSingleton(string.Empty, implementationType);
+
         public void AddSingleton(Func<IServiceProvider, TService> factoryFunc) => AddSingleton(string.Empty, factoryFunc);
 
         public void AddSingleton<TImplementationType>(Func<IServiceProvider, TImplementationType> factoryFunc)
@@ -219,6 +219,8 @@ namespace Dazinator.Extensions.DependencyInjection
 
         public void AddSingleton<TConcreteType>(string name)
             where TConcreteType : TService => _ = AddRegistration(name, typeof(TConcreteType), ServiceLifetime.Singleton);
+
+        public void AddSingleton(string name, Type implementationType) => AddRegistration(name, implementationType, ServiceLifetime.Singleton);
 
         public void AddSingleton(string name, Func<IServiceProvider, TService> factoryFunc) => _ = AddRegistration(name, factoryFunc, ServiceLifetime.Singleton);
 
@@ -242,6 +244,9 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <param name="registrationOwnsInstance">true means if this instance implements IDisposable, Dispose will be called on this instance when the underlying registration is Disposed. false means you take care of disposal of this instance using your own mechanism, or perhaps its managed by a container already etc.</param>
         public void AddSingleton(string name, TService instance, bool registrationOwnsInstance = false) => _ = AddRegistration(name, instance, registrationOwnsInstance);
 
+
+
+
         #endregion
 
         #region Transient
@@ -252,6 +257,8 @@ namespace Dazinator.Extensions.DependencyInjection
 
         public void AddTransient<TConcreteType>()
      where TConcreteType : TService => AddTransient<TConcreteType>(string.Empty);
+
+        public void AddTransient(Type implementationType) => AddTransient(string.Empty, implementationType);
 
         public void AddTransient(Func<IServiceProvider, TService> factoryFunc) => AddTransient(string.Empty, factoryFunc);
 
@@ -264,6 +271,8 @@ namespace Dazinator.Extensions.DependencyInjection
 
         public void AddTransient<TConcreteType>(string name)
            where TConcreteType : TService => _ = AddRegistration(name, typeof(TConcreteType), ServiceLifetime.Transient);
+
+        public void AddTransient(string name, Type implementationType) => AddRegistration(name, implementationType, ServiceLifetime.Transient);
 
         public void AddTransient(string name, Func<IServiceProvider, TService> factoryFunc) => _ = AddRegistration(name, factoryFunc, ServiceLifetime.Transient);
 
@@ -280,6 +289,8 @@ namespace Dazinator.Extensions.DependencyInjection
         public void AddScoped<TConcreteType>()
     where TConcreteType : TService => AddScoped<TConcreteType>(string.Empty);
 
+        public void AddScoped(Type implementationType) => AddScoped(string.Empty, implementationType);
+
         public void AddScoped(Func<IServiceProvider, TService> factoryFunc) => AddScoped(string.Empty, factoryFunc);
 
         public void AddScoped<TImplementationType>(Func<IServiceProvider, TImplementationType> factoryFunc)
@@ -291,6 +302,8 @@ namespace Dazinator.Extensions.DependencyInjection
 
         public void AddScoped<TConcreteType>(string name)
          where TConcreteType : TService => _ = AddRegistration(name, typeof(TConcreteType), ServiceLifetime.Scoped);
+
+        public void AddScoped(string name, Type implementationType) => AddRegistration(name, implementationType, ServiceLifetime.Scoped);
 
         public void AddScoped(string name, Func<IServiceProvider, TService> factoryFunc) => _ = AddRegistration(name, factoryFunc, ServiceLifetime.Scoped);
 
@@ -380,51 +393,6 @@ namespace Dazinator.Extensions.DependencyInjection
             }
 
         }
-
-
-        /// <summary>
-        /// Load existing named service registrations in the IServiceCollection, into this registry, removing them in the process from the IServiceCollection.
-        /// </summary>
-        public void LoadFromServices(IServiceCollection services)
-        {
-            if (services == null)
-            {
-                return;
-            }
-
-            var namedDescriptorType = typeof(NamedServiceDescriptor);
-            var namedServiceRegistrations = services.Where(s => s.GetType() == namedDescriptorType && s.ServiceType == typeof(TService)).Cast<NamedServiceDescriptor>().ToList();
-
-            foreach (var item in namedServiceRegistrations)
-            {
-                //Todo: don't like having to do casts here..
-                if (!_services.Remove(item))
-                {
-                    throw new InvalidOperationException($"Could not remove registration {item?.Name} from service collection when promoting to named service registry.");
-                }
-
-                if (item.ImplementationInstance != null)
-                {
-                    AddRegistration(item.Name, (TService)item.ImplementationInstance, false);
-                    continue;
-                }
-
-                if (item.ImplementationFactory != null)
-                {
-                    AddRegistration(item.Name, (sp) => (TService)item.ImplementationFactory(sp), item.Lifetime);
-                    continue;
-                }
-
-                if (item.ImplementationType != null)
-                {
-                    AddRegistration(item.Name, item.ImplementationType, item.Lifetime);
-                    continue;
-                }
-
-                throw new InvalidOperationException($"Could not process named registration {item.Name}");
-            }
-        }
-
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls

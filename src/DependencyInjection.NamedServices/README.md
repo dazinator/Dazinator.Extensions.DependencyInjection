@@ -2,6 +2,8 @@
 
 Allows you to register services that can be resolved by name.
 
+Named variations of a service can be registered all together using a callback style:
+
 ```csharp
     var services = new ServiceCollection();
     services.AddNamed<AnimalService>(names =>
@@ -25,9 +27,35 @@ Allows you to register services that can be resolved by name.
 
 ```
 
-You can then do any of the following to obtain a named instance of a service:
+Or added individually, using the extension methods on `IServiceCollection` that take a `name` argument:
 
-- inject `Func<string, AnimalService>` and invoke it to obtain a named instance.
+
+```csharp
+// Module A
+   services.AddSingleton<IJob, FooJob>("Foo");
+
+// Module B
+  services.AddTransient<IJob, BarJob>("Bar");
+```
+
+You could mix and match these styles of registration and the named registrations for a particular service type are all additive:
+
+```csharp
+// Module A
+ services.AddSingleton<IJob, FooJob>("A");
+
+ // Some other location
+ services.AddNamed<IJob>(names => {      
+        names.AddSingleton<BazJob>("Baz");
+        names.AddSingleton<BarJob>("Bar");
+});
+
+// all good - you'll be able to resolve "A", "Baz" and "Bar".
+```
+
+To resolve your named service you can do any of the following:
+
+- inject `Func<string, AnimalService>` and invoke it with a name to obtain the named instance.
 - inject `NamedServiceResolver<AnimalService>` and invoke it to obtain a named instance. (if you don't mind your services having a dependency on this library).
 - if using `IServiceProvider` directly, use `sp.GetNamed<AnimalService>("A")` to obtain a named instance.
 
@@ -52,54 +80,6 @@ public MyController(NamedServiceResolver<AnimalService> namedServices)
    AnimalService serviceB = namedServices["B"]; // instance of BearService returned derives from AnimalService
 }
 
-```
-
-## Alternative style for registering named services
-
-The method shown above, shows registering all of the named variations of a service type, within a single callback:
-
-```csharp
- services.AddNamed<IJob>(names => {      
-        names.AddSingleton<FooJob>("Foo");
-        names.AddSingleton<BarJob>("Bar");
-});
-
-```
-
-There is an alternative method. 
-You use the extensions methods that take a `name` argument directly with the `IServiceCollection`:
-
-```csharp
-// Module A
-   services.AddSingleton<IJob, FooJob>("Foo");
-
-// Module B
-  services.AddTransient<IJob, BarJob>("Bar");
-``` csharp
-
-
-But... if you use this style, then you must ensure that before your container is built, 
-you call a method to collate these registrations into the actual registration graph required:
-
-```csharp
-services.CollateNamed();
-```
-
-You can combine both styles.
-
-```csharp
-// Module A
- services.AddSingleton<IJob, FooJob>("A");
-
- // Some other location
- services.AddNamed<IJob>(names => {      
-        names.AddSingleton<FooJob>("Foo");
-        names.AddSingleton<BarJob>("Bar");
-});
-
-// before container built:
-services.CollateNamed();
-// all good - you'll be able to resolve "A", "Foo" and "Bar".
 ```
 
 ## Singletons
