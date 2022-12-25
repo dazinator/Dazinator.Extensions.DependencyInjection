@@ -86,19 +86,14 @@ If you instead, resolve `IEnumerable<TService>` you get both (i.e the registrati
 Therefore if you want to "replace" or "delete" a service that has been registered at parent level so that it isn't included in the `IEnumerable<TService>` that is resolved from the child container, you'll have to add your own work around in application code using something like this to filter the IEnumerable as you see fit.
 
 ```cs
-
-public class MyService 
+public class MyService
 {
-
-public MyService(IEnumerable<Service> services)
-{
-
-// e.g filter the IEnumerable yourself to remove or replace services sourced from parent container registrations.
-this.Services = services.Where(a=>a.Type.Name=="Foo").ToList();
+    public MyService(IEnumerable<Service> services)
+    {
+        // e.g filter the IEnumerable yourself to remove or replace services sourced from parent container registrations.
+        this.Services = services.Where(a => a.Type.Name == "Foo").ToList();
+    }
 }
-
-}
-
 ```
 
 Or you can attempt to manipulate the IServiceCollection's before the containers are built.
@@ -110,7 +105,7 @@ This was a design decision - it's better to potentially include "too many" servi
 
 When singleton open generic types are registered in the parent container (and Microsoft.Extensions.Hosting adds a bunch by default), and not also registered again in the child container:
 
-```
+```csharp
 services.AddSingleton(typeof(IOptions<>), typeof(OptionsManager<T>));
 
 ```
