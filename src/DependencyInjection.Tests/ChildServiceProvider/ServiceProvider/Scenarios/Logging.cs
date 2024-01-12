@@ -7,8 +7,10 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
     using Dazinator.Extensions.DependencyInjection;
     using DependencyInjection.Tests.Utils;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.DependencyInjection.Extensions;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Configuration;
+    using Microsoft.Extensions.Options;
     using Xunit;
     using Xunit.Abstractions;
     using ServiceCollection = Dazinator.Extensions.DependencyInjection.ServiceCollection;
@@ -30,8 +32,10 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
 
         private ITestOutputHelper OutputHelper { get; }
 
-        [Fact]
-        public void Can_Use_Parent_LoggerFactory_ILoggerT()
+        [Theory()]
+        [InlineData(ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)]
+        [InlineData(ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)]
+        public void Can_Use_Parent_LoggerFactory_ILoggerT(ParentSingletonOpenGenericRegistrationsBehaviour behaviour)
         {
             var services = new ServiceCollection();
             services.AddLogging(builder =>
@@ -50,7 +54,7 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
 
             },
             s => s.BuildServiceProvider(),
-            ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
+            behaviour);
 
             //   https://github.com/dotnet/runtime/blob/6072e4d3a7a2a1493f514cdf4be75a3d56580e84/src/libraries/Microsoft.Extensions.Logging.Configuration/src/LoggerProviderConfiguration.cs#L10
             var childLogger = childServiceProvider.GetRequiredService<ILogger<LoggingScenarioTests>>();
@@ -85,8 +89,10 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
         }
 
 
-        [Fact]
-        public void Can_Use_Diffent_LoggerFactory_InChild()
+        [Theory()]
+        [InlineData(ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)]
+        [InlineData(ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)]
+        public void Can_Use_Diffent_LoggerFactory_InChild(ParentSingletonOpenGenericRegistrationsBehaviour behaviour)
         {
             var services = new ServiceCollection();
 
@@ -108,7 +114,7 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
                 {
                     // to allow logging in this child container to inherit condiguration from the root..
                     //var parentLoggingConfiguration = serviceProvider.GetRequiredService<ILoggerProviderConfigurationFactory>();
-                    //builder.AddConfiguration(()                    
+                    //builder.AddConfiguration(()
 
                     //  builder.Services.AddSingleton(typeof(ILoggerProviderConfiguration<>)));
                     builder.ClearProviders();
@@ -122,7 +128,7 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
                 childServices.AddSingleton(childLoggerFatory);
             },
             s => s.BuildServiceProvider(),
-            ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
+            behaviour);
 
             var childLogger = childServiceProvider.GetRequiredService<ILogger<LoggingScenarioTests>>();
             var parentLogger = serviceProvider.GetRequiredService<ILogger<LoggingScenarioTests>>();
@@ -157,10 +163,12 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
             }
         }
 
-        [Fact]
+        [Theory()]
+        [InlineData(ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)]
+        [InlineData(ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)]
         [Description("In a parent container we should be able to have some singleton provider, which is written to based on log level filter x." +
             "In child container we should be able to also use that same provider instance (i.e for console provider this might be important) but it is only written to using a different log level filter configured for child container scope")]
-        public void Can_Inherit_ParentLoggerProvider_InChild()
+        public void Can_Inherit_ParentLoggerProvider_InChild(ParentSingletonOpenGenericRegistrationsBehaviour behaviour)
         {
             var services = new ServiceCollection();
 
@@ -181,30 +189,87 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
             var childServiceProvider = services.CreateChildServiceProvider(serviceProvider, (childServices) =>
             {
                 //  To configure logging differently in child container we should ovveride the singleton LoggerFactory from parent with a new isntance
-                // By using LoggerFactory.Create we get to create an isolated instance
-                var childLoggerFatory = LoggerFactory.Create((builder) =>
+
+                // this doesn't work, because the parent is carrying an ILoggerFactory and ClearProviders() doesn't clear that.
+                // childServices.AddLogging(a =>
+                // {
+                //     //  serviceProvider.GetRequiredService<ILoggerProvider>()
+                //     //  builder.Services.AddSingleton(typeof(ILoggerProviderConfiguration<>)));
+                //     a.ClearProviders(); // we may have inherited parent level providers here, clearproviders() will not clear those.
+                //
+                //     a.AddProvider(loggerProvider); // this provider is singleton instance we want to inherit from parent.
+                //
+                //     a.AddXUnit(OutputHelper, (options) =>
+                //     {
+                //         options.IncludeScopes = true;
+                //     });
+                //     a.SetMinimumLevel(LogLevel.Warning);
+                //
+                // });
+
+                // this is necessary because AddLogging() calls TryAdd() - so we hide parent level registrations temporarily so that TryAdd() doesn't see them, and re-adds the same registrations at child level.
+
+                // TODO - THIS IS BEING DISCARDED, WE NEED A NEW MORE POWERFUL API FOR THIS.
+                // CONSIDER A BUILDER API THAT LETS YOOU CHAIN EXCLUDES AND INCLUDES.
+
+                childServices = childServices.AutoPromoteChildDuplicates(a => a.IsSingleton(), (nested) =>
                 {
-                    // to allow logging in this child container to inherit condiguration from the root..
-                    //var parentLoggingConfiguration = serviceProvider.GetRequiredService<ILoggerProviderConfigurationFactory>();
-                    //builder.AddConfiguration(()                    
-
-                    //  serviceProvider.GetRequiredService<ILoggerProvider>()
-                    //  builder.Services.AddSingleton(typeof(ILoggerProviderConfiguration<>)));
-                    builder.ClearProviders();
-
-                    builder.AddProvider(loggerProvider); // this provider is singleton instance we want to inherit from parent.
-
-                    builder.AddXUnit(OutputHelper, (options) =>
+                    nested.AddLogging(a =>
                     {
-                        options.IncludeScopes = true;
+                        //  serviceProvider.GetRequiredService<ILoggerProvider>()
+                        //  builder.Services.AddSingleton(typeof(ILoggerProviderConfiguration<>)));
+                        a.ClearProviders(); // we may have inherited parent level providers here, clearproviders() will not clear those.
+
+                        a.AddProvider(loggerProvider); // this provider is singleton instance we want to inherit from parent.
+
+                        a.AddXUnit(OutputHelper, (options) =>
+                        {
+                            options.IncludeScopes = true;
+                        });
+                        a.SetMinimumLevel(LogLevel.Warning);
+
                     });
-                    builder.SetMinimumLevel(LogLevel.Warning);
+
                 });
 
-                childServices.AddSingleton(childLoggerFatory);
+               // childServices.AddLogging()
+                 // By using LoggerFactory.Create we get to create an isolated instance
+                //  var childLoggerFatory = LoggerFactory.Create((builder) =>
+                //  {
+                //      // to allow logging in this child container to inherit condiguration from the root..
+                //      //var parentLoggingConfiguration = serviceProvider.GetRequiredService<ILoggerProviderConfigurationFactory>();
+                //      //builder.AddConfiguration(()
+                //
+                //      //  serviceProvider.GetRequiredService<ILoggerProvider>()
+                //      //  builder.Services.AddSingleton(typeof(ILoggerProviderConfiguration<>)));
+                //      builder.ClearProviders();
+                //
+                //      builder.AddProvider(loggerProvider); // this provider is singleton instance we want to inherit from parent.
+                //
+                //      builder.AddXUnit(OutputHelper, (options) =>
+                //      {
+                //          options.IncludeScopes = true;
+                //      });
+                //      builder.SetMinimumLevel(LogLevel.Warning);
+                //  });
+                //
+                // childServices.AddSingleton(childLoggerFatory);
+
+                // we add these to stop them being delegate to the parent.
+                // if (behaviour == ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)
+                // {
+                //     childServices.TryAdd(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(Logger<>)));
+                //
+                //     childServices.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<LoggerFilterOptions>>(
+                //         new DefaultLoggerLevelConfigureOptions(LogLevel.Information)));
+                // }
+
+
+
             },
              s => s.BuildServiceProvider(),
-             ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
+             behaviour,
+             allowModifyingParentServiceCollection: true); // this lets the child container modify the parent service collection, which means that "RemoveAll" will remove services inherited by default from the parent.
 
             var childLogger = childServiceProvider.GetRequiredService<ILogger<LoggingScenarioTests>>();
             var parentLogger = serviceProvider.GetRequiredService<ILogger<LoggingScenarioTests>>();

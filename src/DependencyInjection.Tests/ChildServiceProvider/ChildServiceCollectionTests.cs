@@ -294,7 +294,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
         [InlineData(new Type[0], new[] { typeof(AnimalService) })]
         [InlineData(new Type[0], new Type[0])]
         [InlineData(new[] { typeof(AnimalService) }, new[] { typeof(LionService) })]
-        public void RemoveAt_OnlyRemovesChildDescriptors(Type[] parentServices, Type[] childServices)
+        public void RemoveAt_ReadOnlyParent_ThrowsRemovingParentDescriptors(Type[] parentServices, Type[] childServices)
         {
             var parentServiceCollection = new ServiceCollection();
             foreach (var parentType in parentServices)
@@ -302,7 +302,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList(), allowModifyingParentLevelServices: false);
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);

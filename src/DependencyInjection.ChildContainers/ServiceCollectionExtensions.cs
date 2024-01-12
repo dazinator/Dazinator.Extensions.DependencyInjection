@@ -19,18 +19,23 @@ namespace Dazinator.Extensions.DependencyInjection
         /// <typeparam name="TService"></typeparam>
         /// <param name="services"></param>
         /// <returns></returns>
-        public static IChildServiceCollection CreateChildServiceCollection(this IServiceCollection services)
+        public static IChildServiceCollection CreateChildServiceCollection(this IServiceCollection services, bool allowModifyingParentServiceCollection = false)
         {
-            var childServiceCollection = new ChildServiceCollection(services.ToImmutableList());
+            var childServiceCollection = new ChildServiceCollection(services.ToImmutableList(), allowModifyingParentServiceCollection);
             return childServiceCollection;
         }
 
         public static IServiceProvider CreateChildServiceProvider(
 
 
-           this IServiceCollection parentServices, IServiceProvider parentServiceProvider, Action<IChildServiceCollection> configureChildServices, Func<IServiceCollection, IServiceProvider> buildSp, ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer)
+           this IServiceCollection parentServices,
+           IServiceProvider parentServiceProvider,
+           Action<IChildServiceCollection> configureChildServices,
+           Func<IServiceCollection, IServiceProvider> buildSp,
+           ParentSingletonOpenGenericRegistrationsBehaviour behaviour = ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer,
+           bool allowModifyingParentServiceCollection = false)
         {
-            var childServices = parentServices.CreateChildServiceCollection();
+            var childServices = parentServices.CreateChildServiceCollection(allowModifyingParentServiceCollection);
             configureChildServices?.Invoke(childServices);
             var childContainer = childServices.BuildChildServiceProvider(parentServiceProvider, s => buildSp(s), behaviour);
             return childContainer;
@@ -175,7 +180,7 @@ namespace Dazinator.Extensions.DependencyInjection
                 // oh goodie
                 // get an instance of the singleton from the parent container - so its owned by the parent.
                 // then register this instance as an externally owned instance in this child container.
-                // child container won't then try and own it.                
+                // child container won't then try and own it.
                 var singletonInstance = parentServiceProvider.GetRequiredService(item.ServiceType);
                 var serviceDescriptor = new ServiceDescriptor(item.ServiceType, singletonInstance); // by providing the instance, the child container won't manage this object instances lifetime (i.e call Dispose if its IDisposable).
                 return serviceDescriptor;
