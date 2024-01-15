@@ -3,9 +3,11 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
     using System;
     using System.Collections.Generic;
     using System.ComponentModel;
+    using System.Reflection.Emit;
     using System.Text;
     using Dazinator.Extensions.DependencyInjection;
     using DependencyInjection.Tests.Utils;
+    using MartinCostello.Logging.XUnit;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection.Extensions;
     using Microsoft.Extensions.Logging;
@@ -232,8 +234,8 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
 
                 });
 
-               // childServices.AddLogging()
-                 // By using LoggerFactory.Create we get to create an isolated instance
+                // childServices.AddLogging()
+                // By using LoggerFactory.Create we get to create an isolated instance
                 //  var childLoggerFatory = LoggerFactory.Create((builder) =>
                 //  {
                 //      // to allow logging in this child container to inherit condiguration from the root..
@@ -315,6 +317,53 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
                     Assert.Equal(5, writes.Count);
                 }
             }
+        }
+
+        [Fact]
+        public void Repro_InheritanceIssue()
+        {
+
+            var parentServices = new ServiceCollection();
+
+            // add logging at parent level
+            parentServices.TryAdd(ServiceDescriptor.Singleton<ILoggerFactory, LoggerFactory>());
+            parentServices.TryAdd(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(Logger<>)));
+
+            // TryAddImplementation - if implementation with same type already exists it won't be added, if implementation is different type
+            // exists it will still be added, which makes it different from TryAdd() which only considers Service Type.
+            parentServices.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<LoggerFilterOptions>>(
+                new DefaultLoggerLevelConfigureOptions(LogLevel.Information)));
+
+
+            // add test provider
+            var testLogSink = new TestSink();
+            var loggerProvider = new TestLoggerProvider(testLogSink);
+
+            parentServices.
+
+            XUnitLoggerOptions xUnitLoggerOptions = new XUnitLoggerOptions();
+            configure(xUnitLoggerOptions);
+            return builder.AddProvider(new XUnitLoggerProvider(outputHelper, xUnitLoggerOptions));
+
+
+            parentService.Add(ServiceDescriptor.Singleton<IConfigureOptions<LoggerFilterOptions>>(
+               new DefaultLoggerLevelConfigureOptions(level)));
+
+        }
+    }
+
+    /// <summary>
+    /// Default logger level configuration when using the Autofac container
+    /// </summary>
+    public class DefaultLoggerLevelConfigureOptions : ConfigureOptions<LoggerFilterOptions>
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DefaultLoggerLevelConfigureOptions"/> class.
+        /// </summary>
+        /// <param name="level">default log level to configure</param>
+        public DefaultLoggerLevelConfigureOptions(LogLevel level)
+            : base(options => options.MinLevel = level)
+        {
         }
     }
 }
