@@ -26,7 +26,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var descriptor = new ServiceDescriptor(typeof(AnimalService), typeof(AnimalService), lifetime);
             parentServices.Add(descriptor);
 
-            var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
+            var childServices = new ChildServiceCollection(parentServices.Clone());
 
             var parentServiceProvider = parentServices.BuildServiceProvider();
             var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider, s => s.BuildServiceProvider());
@@ -38,31 +38,31 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             Assert.NotNull(childService);
         }
 
-        [Fact]
-        [Description("Services registered in the parent container as singleton open generics, are not supported and should cause an exception to be thrown by default unless user specifies a behaviour flag to opt in to a workaround.")]
-        public void ParentService_SingletonOpenGeneric_ThrowsWhenOptionsSet()
-        {
-            var parentServices = new ServiceCollection();
-            var descriptorA = new ServiceDescriptor(typeof(IGenericServiceA<>), typeof(GenericAnimalService<>), ServiceLifetime.Singleton);
-
-            parentServices.Add(descriptorA);
-            var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
-
-            var serviceProvider = parentServices.BuildServiceProvider();
-            Assert.Throws<System.NotSupportedException>(() => childServices.BuildChildServiceProvider(serviceProvider, s => s.BuildServiceProvider(), ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer));
-
-            //var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
-
-            //var parentServiceProvider = parentServices.BuildServiceProvider();
-            //var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
-
-            //var parentService = parentServiceProvider.GetRequiredService<AnimalService>();
-            //var childService = childServiceProvider.GetRequiredService<AnimalService>();
-
-            //Assert.NotNull(parentService);
-            //Assert.NotNull(childService);
-            //Assert.Same(parentService, childService);
-        }
+        // [Fact]
+        // [Description("Services registered in the parent container as singleton open generics, are not supported and should cause an exception to be thrown by default unless user specifies a behaviour flag to opt in to a workaround.")]
+        // public void ParentService_SingletonOpenGeneric_ThrowsWhenOptionsSet()
+        // {
+        //     var parentServices = new ServiceCollection();
+        //     var descriptorA = new ServiceDescriptor(typeof(IGenericServiceA<>), typeof(GenericAnimalService<>), ServiceLifetime.Singleton);
+        //
+        //     parentServices.Add(descriptorA);
+        //     var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
+        //
+        //     var serviceProvider = parentServices.BuildServiceProvider();
+        //     Assert.Throws<System.NotSupportedException>(() => childServices.BuildChildServiceProvider(serviceProvider, s => s.BuildServiceProvider(), ParentSingletonBehaviour.ThrowIfNotSupportedByContainer));
+        //
+        //     //var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
+        //
+        //     //var parentServiceProvider = parentServices.BuildServiceProvider();
+        //     //var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider);
+        //
+        //     //var parentService = parentServiceProvider.GetRequiredService<AnimalService>();
+        //     //var childService = childServiceProvider.GetRequiredService<AnimalService>();
+        //
+        //     //Assert.NotNull(parentService);
+        //     //Assert.NotNull(childService);
+        //     //Assert.Same(parentService, childService);
+        // }
 
         [Fact]
         [Description("Services registered in the parent container as singleton open generics, are delegated from the child service provider to the parent service provider when resolved by the child provider - ensuring the same singleton instance is honoured.")]
@@ -72,7 +72,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var descriptorA = new ServiceDescriptor(typeof(IGenericServiceA<>), typeof(GenericAnimalService<>), ServiceLifetime.Singleton);
 
             parentServices.Add(descriptorA);
-            var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
+            var childServices = new ChildServiceCollection(parentServices.Clone());
 
             var serviceProvider = parentServices.BuildServiceProvider();
             // Assert.Throws<System.NotSupportedException>(() => childServices.BuildChildServiceProvider(serviceProvider, ParentSingletonOpenGenericRegistrationsBehaviour.ThrowIfNotSupportedByContainer));
@@ -111,10 +111,10 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
                 parentServices.AddTransient(sp => new DependencyA() { SomeIdentifier = "Parent" });
             }
 
-            var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
+            var childServices = new ChildServiceCollection(parentServices.Clone());
             if (shouldBeCreatedInChildContainer)
             {
-                // This also covers the case where a dependency is satisfied by the child container 
+                // This also covers the case where a dependency is satisfied by the child container
                 childServices.AddTransient<DependencyA>();
             }
 
@@ -166,7 +166,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             parentServices.Add(descriptor);
 
 
-            var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
+            var childServices = new ChildServiceCollection(parentServices.Clone());
 
             var parentServiceProvider = parentServices.BuildServiceProvider();
             var childServiceProvider = childServices.BuildChildServiceProvider(parentServiceProvider, s => s.BuildServiceProvider());
@@ -195,7 +195,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
         public void ChildService_OnlyResolvesWithChildContainer()
         {
             var parentServices = new ServiceCollection();
-            var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
+            var childServices = new ChildServiceCollection(parentServices.Clone());
 
             childServices.AddTransient<AnimalService>();
 
@@ -225,7 +225,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             parentServices.AddSingleton<DisposableDependencyB>(sp => new DisposableDependencyB() { OnDispose = () => singletonWasDisposed = true });
 
 
-            var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
+            var childServices = new ChildServiceCollection(parentServices.Clone());
             childServices.AddTransient<LionServiceWithGenericDependency<DependencyA>>();
             childServices.AddScoped<LionServiceWithGenericDependency<DisposableDependencyA>>();
             childServices.AddScoped<LionServiceWithGenericDependency<DisposableDependencyB>>();
@@ -261,7 +261,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
             var parentServices = new ServiceCollection();
             parentServices.AddTransient<LionService>();
 
-            var childServices = new ChildServiceCollection(parentServices.ToImmutableList());
+            var childServices = new ChildServiceCollection(parentServices.Clone());
             childServices.AddTransient<LionService>(sp => new LionService() { SomeProperty = "child" });
 
             var parentServiceProvider = parentServices.BuildServiceProvider();

@@ -14,8 +14,8 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
         [Fact]
         public void Can_Construct()
         {
-            var parentServiceCollection = new ServiceCollection();
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            IServiceCollection parentServiceCollection = new ServiceCollection();
+            var sut = new ChildServiceCollection(parentServiceCollection);
             Assert.NotNull(sut);
         }
 
@@ -32,14 +32,14 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);
-                Assert.Contains(sut.ChildDescriptors, (a) => a.ServiceType == childType);
+                Assert.Contains(sut.GetChildServiceDescriptors(), (a) => a.ServiceType == childType);
             }
 
-            Assert.Equal(childServices.Count(), sut.ChildDescriptors.Count());
+            Assert.Equal(childServices.Count(), sut.GetChildServiceDescriptors().Count());
         }
 
         [Theory]
@@ -55,7 +55,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(item);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             foreach (var item in childServices)
             {
                 sut.AddTransient(item);
@@ -79,7 +79,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);
@@ -125,7 +125,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);
@@ -166,7 +166,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);
@@ -189,7 +189,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);
@@ -200,14 +200,14 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 Assert.True(sut.Contains(item));
             }
 
-            Assert.Equal(childServices.Count(), sut.ChildDescriptors.Count());
+            Assert.Equal(childServices.Count(), sut.GetChildServiceDescriptors().Count());
         }
 
         [Fact]
         public void IsReadOnly_Returns_False()
         {
             var parentServiceCollection = new ServiceCollection();
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             Assert.False(sut.IsReadOnly);
         }
 
@@ -228,7 +228,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);
@@ -260,7 +260,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);
@@ -284,7 +284,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 Assert.Equal(oldCount - 1, sut.Count);
             }
 
-            Assert.False(sut.ChildDescriptors.Any());
+            Assert.False(sut.GetChildServiceDescriptors().Any());
             Assert.Equal(parentServiceCollection.Count, sut.Count);
         }
 
@@ -302,7 +302,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList(), allowModifyingParentLevelServices: false);
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone(), allowModifyingParentLevelServices: false);
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);
@@ -325,7 +325,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 Assert.Equal(oldCount - 1, sut.Count);
             }
 
-            Assert.False(sut.ChildDescriptors.Any());
+            Assert.False(sut.GetChildServiceDescriptors().Any());
             Assert.Equal(parentServiceCollection.Count, sut.Count);
         }
 
@@ -343,7 +343,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);
@@ -364,7 +364,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
             sut.Insert(testIndex, newDescriptor);
             Assert.Equal(originalCount + 1, sut.Count);
             Assert.Same(sut[testIndex], newDescriptor);
-            Assert.Equal(originalCount - parentServiceCollection.Count + 1, sut.ChildDescriptors.Count());
+            Assert.Equal(originalCount - parentServiceCollection.Count + 1, sut.GetChildServiceDescriptors().Count());
 
             // insert item at bottom of child descriptors
             var bottomIndex = sut.Count;
@@ -390,7 +390,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);
@@ -420,7 +420,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);
@@ -449,13 +449,13 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
                 parentServiceCollection.AddTransient(parentType);
             }
 
-            var sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            var sut = new ChildServiceCollection(parentServiceCollection.Clone());
             foreach (var childType in childServices)
             {
                 sut.AddTransient(childType);
             }
 
-            var children = sut.ChildDescriptors.ToList();
+            var children = sut.GetChildServiceDescriptors().ToList();
             Assert.Equal(childServices.Count(), children.Count);
 
             foreach (var item in childServices)
@@ -484,36 +484,36 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.Child
             Assert.Equal(2, parentServiceCollection.Count);
 
 
-            IChildServiceCollection sut = new ChildServiceCollection(parentServiceCollection.ToImmutableList());
+            IChildServiceCollection sut = new ChildServiceCollection(parentServiceCollection.Clone());
             Assert.Equal(2, sut.Count);
-            Assert.Equal(2, sut.ParentDescriptors.Count());
-            Assert.Empty(sut.ChildDescriptors);
+            Assert.Equal(2, sut.GetParentServiceDescriptors().Count());
+            Assert.Empty(sut.GetChildServiceDescriptors());
 
             // demonstrates the issue - this will not add any service because the service descriptor already visible at parent level,
             sut.TryAddSingleton<LionService>();
             Assert.Equal(2, sut.Count);
-            Assert.Equal(2, sut.ParentDescriptors.Count());
-            Assert.Empty(sut.ChildDescriptors);
+            Assert.Equal(2, sut.GetParentServiceDescriptors().Count());
+            Assert.Empty(sut.GetChildServiceDescriptors());
 
             // Within the action below, we are hiding parent level service descriptors that match the predicate,
             // vausing them to be added again by TryAdd()
-            sut = sut.AutoPromoteChildDuplicates(a => a.IsSingleton(), (nested) =>
+            sut = sut.AutoDuplicateSingletons((nested) =>
              {
                  // Singleton LionService should be hidden, so TryAdd() calls should succeed
                  Assert.Single(nested);
-                 Assert.Single(nested.ParentDescriptors);
-                 Assert.Empty(nested.ChildDescriptors);
+                 Assert.Single(nested.GetParentServiceDescriptors());
+                 Assert.Empty(nested.GetChildServiceDescriptors());
 
                  nested.TryAddSingleton<LionService>();
                  Assert.Equal(2, nested.Count);
-                 Assert.Single(nested.ParentDescriptors);
-                 Assert.Single(nested.ChildDescriptors);
+                 Assert.Single(nested.GetParentServiceDescriptors());
+                 Assert.Single(nested.GetChildServiceDescriptors());
              });
 
             // The duplicated service descriptor should no longer be in the parent services, only in child services - it has been promoted.
             Assert.Equal(2, sut.Count);
-            Assert.Single(sut.ParentDescriptors);
-            Assert.Single(sut.ChildDescriptors);
+            Assert.Single(sut.GetParentServiceDescriptors());
+            Assert.Single(sut.GetChildServiceDescriptors());
         }
 
     }

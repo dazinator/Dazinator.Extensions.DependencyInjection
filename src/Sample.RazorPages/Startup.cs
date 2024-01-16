@@ -77,9 +77,8 @@ namespace Sample.RazorPages
 
                 ChildContainer = Services.CreateChildServiceCollection()
                                          .ConfigureServices(child => child.AddOptions())
-                                         .AutoPromoteChildDuplicates(d => d.IsSingletonOpenGeneric(),
-                                                                  (child) => ConfigureChildServices(child, builder))
-                                      .BuildChildServiceProvider(appServices, s => s.BuildServiceProvider());
+                                         .AutoDuplicateSingletons((child) => ConfigureChildServices(child, builder))
+                                         .BuildChildServiceProvider(appServices, s => s.BuildServiceProvider());
             });
 
             app.Use(async (context, next) =>

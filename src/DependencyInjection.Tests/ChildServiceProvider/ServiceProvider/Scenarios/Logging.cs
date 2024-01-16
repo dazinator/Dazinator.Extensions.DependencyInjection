@@ -3,8 +3,10 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
     using System;
     using System.Collections.Generic;
     using System.ComponentModel;
+    using System.Diagnostics.CodeAnalysis;
     using System.Reflection.Emit;
     using System.Text;
+    using System.Threading;
     using Dazinator.Extensions.DependencyInjection;
     using DependencyInjection.Tests.Utils;
     using MartinCostello.Logging.XUnit;
@@ -35,9 +37,9 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
         private ITestOutputHelper OutputHelper { get; }
 
         [Theory()]
-        [InlineData(ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)]
-        [InlineData(ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)]
-        public void Can_Use_Parent_LoggerFactory_ILoggerT(ParentSingletonOpenGenericRegistrationsBehaviour behaviour)
+        [InlineData(ParentSingletonBehaviour.DuplicateSingletons)] // the singleton loggers and logger factories are duplicated at child level resulting in duplicate instances.
+        [InlineData(ParentSingletonBehaviour.Delegate)] // the singleton loggers and logger factories are kept as singletons at parent level.
+        public void Can_Use_Parent_LoggerFactory_ILoggerT(ParentSingletonBehaviour behaviour)
         {
             var services = new ServiceCollection();
             services.AddLogging(builder =>
@@ -49,7 +51,6 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
                        });
             });
             var serviceProvider = services.BuildServiceProvider();
-
             var childServiceProvider = services.CreateChildServiceProvider(serviceProvider, (childServices) =>
             {
 
@@ -92,9 +93,9 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
 
 
         [Theory()]
-        [InlineData(ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)]
-        [InlineData(ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)]
-        public void Can_Use_Diffent_LoggerFactory_InChild(ParentSingletonOpenGenericRegistrationsBehaviour behaviour)
+        [InlineData(ParentSingletonBehaviour.DuplicateSingletons)]
+        [InlineData(ParentSingletonBehaviour.Delegate)]
+        public void Can_Use_Diffent_LoggerFactory_InChild(ParentSingletonBehaviour behaviour)
         {
             var services = new ServiceCollection();
 
@@ -166,11 +167,11 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
         }
 
         [Theory()]
-        [InlineData(ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons)]
-        [InlineData(ParentSingletonOpenGenericRegistrationsBehaviour.Delegate)]
+        [InlineData(ParentSingletonBehaviour.DuplicateSingletons)]
+        [InlineData(ParentSingletonBehaviour.Delegate)]
         [Description("In a parent container we should be able to have some singleton provider, which is written to based on log level filter x." +
             "In child container we should be able to also use that same provider instance (i.e for console provider this might be important) but it is only written to using a different log level filter configured for child container scope")]
-        public void Can_Inherit_ParentLoggerProvider_InChild(ParentSingletonOpenGenericRegistrationsBehaviour behaviour)
+        public void Can_Inherit_ParentLoggerProvider_InChild(ParentSingletonBehaviour behaviour)
         {
             var services = new ServiceCollection();
 
@@ -214,7 +215,7 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
                 // TODO - THIS IS BEING DISCARDED, WE NEED A NEW MORE POWERFUL API FOR THIS.
                 // CONSIDER A BUILDER API THAT LETS YOOU CHAIN EXCLUDES AND INCLUDES.
 
-                childServices = childServices.AutoPromoteChildDuplicates(a => a.IsSingleton(), (nested) =>
+                childServices = childServices.AutoDuplicateSingletons((nested) =>
                 {
                     nested.AddLogging(a =>
                     {
@@ -325,32 +326,132 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
 
             var parentServices = new ServiceCollection();
 
-            // add logging at parent level
-            parentServices.TryAdd(ServiceDescriptor.Singleton<ILoggerFactory, LoggerFactory>());
-            parentServices.TryAdd(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(Logger<>)));
-
-            // TryAddImplementation - if implementation with same type already exists it won't be added, if implementation is different type
-            // exists it will still be added, which makes it different from TryAdd() which only considers Service Type.
-            parentServices.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<LoggerFilterOptions>>(
-                new DefaultLoggerLevelConfigureOptions(LogLevel.Information)));
-
-
-            // add test provider
             var testLogSink = new TestSink();
             var loggerProvider = new TestLoggerProvider(testLogSink);
 
-            parentServices.
-
-            XUnitLoggerOptions xUnitLoggerOptions = new XUnitLoggerOptions();
-            configure(xUnitLoggerOptions);
-            return builder.AddProvider(new XUnitLoggerProvider(outputHelper, xUnitLoggerOptions));
+            var builder = new LoggingBuilder(parentServices);
+            builder.AddLogging().AddProvider(loggerProvider);
 
 
-            parentService.Add(ServiceDescriptor.Singleton<IConfigureOptions<LoggerFilterOptions>>(
-               new DefaultLoggerLevelConfigureOptions(level)));
+            var parentSp = parentServices.BuildServiceProvider();
 
+            var childSp = parentServices.CreateChildServiceProvider(parentSp, (childServices) =>
+            {
+                var childOnlyServices = childServices.GetChildServiceDescriptors();
+
+                //childServices.ParentDescriptors.
+                childServices.AutoDuplicateSingletons((s) =>
+                {
+                    //  To configure logging differently in child container we
+                    var childLoggingBuilder = new LoggingBuilder(s);
+                    childLoggingBuilder.AddLogging()
+                        .AddProvider(loggerProvider)  // use same test provider but with different log level at child scoope.
+                        .SetMinimumLevel(LogLevel.Warning);
+                });
+
+            }, collection => collection.BuildServiceProvider());
+
+
+            var childLogger = childSp.GetRequiredService<ILogger<LoggingScenarioTests>>();
+
+            var childLoggers = childSp.GetServices<ILogger<LoggingScenarioTests>>();
+
+            var childLoggerFactories = childSp.GetServices<ILoggerFactory>(); // this is the problem, we are getting the parent factory not the child.
+
+            var parentLogger = parentSp.GetRequiredService<ILogger<LoggingScenarioTests>>();
+
+            childLogger.LogInformation("Hello from child you shouldn't see this because child log level is warning");
+            var writes = testLogSink.Writes;
+            Assert.Empty(writes);
+
+            parentLogger.LogInformation("Hello from parent you should see this.");
+            Assert.Single(writes);
+        }
+
+        public class LoggingBuilder
+        {
+            private readonly IServiceCollection _services;
+
+            public LoggingBuilder(IServiceCollection services)
+            {
+                _services = services;
+            }
+
+            /// <summary>
+            /// Removes all <see cref="ILoggerProvider"/>s from <paramref name="builder"/>.
+            /// </summary>
+            /// <param name="builder">The <see cref="ILoggingBuilder"/> to remove <see cref="ILoggerProvider"/>s from.</param>
+            /// <returns>The <see cref="ILoggingBuilder"/> so that additional calls can be chained.</returns>
+            public LoggingBuilder ClearProviders()
+            {
+                _services.RemoveAll<ILoggerProvider>();
+                return this;
+            }
+
+            public LoggingBuilder AddLogging()
+            {
+
+                AddOptions(_services);
+                // add logging at parent level
+                _services.TryAdd(ServiceDescriptor.Singleton<ILoggerFactory, LoggerFactory>());
+                _services.TryAdd(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(Logger<>)));
+
+                // TryAddImplementation - if implementation with same type already exists it won't be added, if implementation is different type
+                // exists it will still be added, which makes it different from TryAdd() which only considers Service Type.
+                _services.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<LoggerFilterOptions>>(
+                    new DefaultLoggerLevelConfigureOptions(LogLevel.Information)));
+
+                return this;
+            }
+
+
+            /// <summary>
+            /// Adds the given <see cref="ILoggerProvider"/> to the <see cref="ILoggingBuilder"/>
+            /// </summary>
+            /// <param name="builder">The <see cref="ILoggingBuilder"/> to add the <paramref name="provider"/> to.</param>
+            /// <param name="provider">The <see cref="ILoggerProvider"/> to add to the <paramref name="builder"/>.</param>
+            /// <returns>The <see cref="ILoggingBuilder"/> so that additional calls can be chained.</returns>
+            public LoggingBuilder AddProvider(ILoggerProvider provider)
+            {
+                _services.AddSingleton(provider);
+                return this;
+            }
+
+            /// <summary>
+            /// Sets a minimum <see cref="LogLevel"/> requirement for log messages to be logged.
+            /// </summary>
+            /// <param name="builder">The <see cref="ILoggingBuilder"/> to set the minimum level on.</param>
+            /// <param name="level">The <see cref="LogLevel"/> to set as the minimum.</param>
+            /// <returns>The <see cref="ILoggingBuilder"/> so that additional calls can be chained.</returns>
+            public LoggingBuilder SetMinimumLevel(LogLevel level)
+            {
+                _services.Add(ServiceDescriptor.Singleton<IConfigureOptions<LoggerFilterOptions>>(new DefaultLoggerLevelConfigureOptions(level)));
+                return this;
+            }
+        }
+
+
+
+
+        public static IServiceCollection AddOptions(IServiceCollection services)
+        {
+            if (services == null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            services.TryAdd(ServiceDescriptor.Singleton(typeof(IOptions<>), typeof(UnnamedOptionsManager<>)));
+            services.TryAdd(ServiceDescriptor.Scoped(typeof(IOptionsSnapshot<>), typeof(OptionsManager<>)));
+            services.TryAdd(ServiceDescriptor.Singleton(typeof(IOptionsMonitor<>), typeof(OptionsMonitor<>)));
+            services.TryAdd(ServiceDescriptor.Transient(typeof(IOptionsFactory<>), typeof(OptionsFactory<>)));
+            services.TryAdd(ServiceDescriptor.Singleton(typeof(IOptionsMonitorCache<>), typeof(OptionsCache<>)));
+            return services;
         }
     }
+
+
+
+
 
     /// <summary>
     /// Default logger level configuration when using the Autofac container
@@ -364,6 +465,32 @@ namespace DependencyInjection.Tests.ChildServiceProvider.ServiceProvider.Scenari
         public DefaultLoggerLevelConfigureOptions(LogLevel level)
             : base(options => options.MinLevel = level)
         {
+        }
+    }
+
+    internal sealed class UnnamedOptionsManager<TOptions> : IOptions<TOptions>
+        where TOptions : class
+    {
+        private readonly IOptionsFactory<TOptions> _factory;
+        private volatile object _syncObj;
+        private volatile TOptions _value;
+
+        public UnnamedOptionsManager(IOptionsFactory<TOptions> factory) => _factory = factory;
+
+        public TOptions Value
+        {
+            get
+            {
+                if (_value is TOptions value)
+                {
+                    return value;
+                }
+
+                lock (_syncObj ?? Interlocked.CompareExchange(ref _syncObj, new object(), null) ?? _syncObj)
+                {
+                    return _value ??= _factory.Create(Options.DefaultName);
+                }
+            }
         }
     }
 }
