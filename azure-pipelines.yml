@@ -17,8 +17,17 @@ variables:
   GitVersion.SemVer: ''
 
 steps:
-- task: gittools.gitversion.gitversion-task.GitVersion@5
-  displayName: gitversion
+- task: gitversion/setup@0
+  displayName: Install GitVersion
+  inputs:
+    versionSpec: '5.11.1'
+    
+- task: gitversion/execute@0
+  displayName: Determine Version
+  name: Version
+  inputs:
+    # useConfigFile: true
+    # configFilePath: GitVersion.yml
 
 - task: UseDotNet@2
   displayName: 'Use .NET Core sdk'
