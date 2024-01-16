@@ -4,8 +4,8 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
 trigger:
-- master
-- develop
+  - master
+  - develop
 
 pool:
   vmImage: 'windows-latest'
@@ -17,67 +17,67 @@ variables:
   GitVersion.SemVer: ''
 
 steps:
-- task: gitversion/setup@0
-  displayName: Install GitVersion
-  inputs:
-    versionSpec: '5.11.1'
-    
-- task: gitversion/execute@0
-  displayName: Determine Version
-  name: Version
-  inputs:
-    # useConfigFile: true
+  - task: gitversion/setup@0
+    displayName: Install GitVersion
+    inputs:
+      versionSpec: '5.11.1'
+
+  - task: gitversion/execute@0
+    displayName: Determine Version
+    name: Version
+      #inputs:
+      # useConfigFile: true
     # configFilePath: GitVersion.yml
 
-- task: UseDotNet@2
-  displayName: 'Use .NET Core sdk'
-  inputs:
-    packageType: sdk    
-    useGlobalJson: true
-    installationPath: $(Agent.ToolsDirectory)/dotnet
+  - task: UseDotNet@2
+    displayName: 'Use .NET Core sdk'
+    inputs:
+      packageType: sdk
+      useGlobalJson: true
+      installationPath: $(Agent.ToolsDirectory)/dotnet
 
-- script: dotnet tool install -g dotnet-format
-  displayName: Install dotnet-format
-  
-- script: dotnet-format -w "$(Build.SourcesDirectory)/src" -v normal --check
-  displayName: Formatting Check
+  - script: dotnet tool install -g dotnet-format
+    displayName: Install dotnet-format
 
-- task: NuGetToolInstaller@1
-  inputs:
-    versionSpec: '5.8.0' 
+  - script: dotnet-format -w "$(Build.SourcesDirectory)/src" -v normal --check
+    displayName: Formatting Check
 
-- task: DotNetCoreCLI@2
-  displayName: Restore
-  inputs:
-    command: restore
-    projects: '$(solution)'
+  - task: NuGetToolInstaller@1
+    inputs:
+      versionSpec: '5.8.0'
 
-- task: DotNetCoreCLI@2
-  displayName: Build
-  inputs:
-    command: build
-    projects: '$(solution)'
-    configuration: '$(buildConfiguration)'
-    versioningScheme: byEnvVar
-    versionEnvVar: 'GitVersion.SemVer'
+  - task: DotNetCoreCLI@2
+    displayName: Restore
+    inputs:
+      command: restore
+      projects: '$(solution)'
 
-- task: DotNetCoreCLI@2
-  displayName: test
-  inputs:
-    command: test
-    projects: '$(solution)'
-    configuration: '$(buildConfiguration)'   
+  - task: DotNetCoreCLI@2
+    displayName: Build
+    inputs:
+      command: build
+      projects: '$(solution)'
+      configuration: '$(buildConfiguration)'
+      versioningScheme: byEnvVar
+      versionEnvVar: 'GitVersion.SemVer'
 
-- task: DotNetCoreCLI@2
-  inputs: 
-    command: 'pack'    
-    versioningScheme: byEnvVar
-    versionEnvVar: 'GitVersion.SemVer'
-    
-- task: NuGetCommand@2
-  inputs:
-    command: push
-    nuGetFeedType: external
-    publishFeedCredentials: 'NuGet'
-    versioningScheme: byEnvVar
-    versionEnvVar: 'GitVersion.SemVer'
+  - task: DotNetCoreCLI@2
+    displayName: test
+    inputs:
+      command: test
+      projects: '$(solution)'
+      configuration: '$(buildConfiguration)'
+
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: 'pack'
+      versioningScheme: byEnvVar
+      versionEnvVar: 'GitVersion.SemVer'
+
+  - task: NuGetCommand@2
+    inputs:
+      command: push
+      nuGetFeedType: external
+      publishFeedCredentials: 'NuGet'
+      versioningScheme: byEnvVar
+      versionEnvVar: 'GitVersion.SemVer'
