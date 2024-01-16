@@ -4,7 +4,6 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceDescriptorExtensions
     {
-
         public static bool IsSingletonOpenGeneric(this ServiceDescriptor descriptor) => descriptor.IsSingleton() && descriptor.IsOpenGeneric();
 
         public static bool IsOpenGeneric(this ServiceDescriptor descriptor) => !descriptor.ServiceType?.IsClosedType() ?? false;

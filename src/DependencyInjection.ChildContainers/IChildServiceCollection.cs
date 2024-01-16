@@ -9,28 +9,25 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
     /// </summary>
     public interface IChildServiceCollection : IServiceCollection
     {
-        IEnumerable<ServiceDescriptor> ChildDescriptors { get; }
-        IEnumerable<ServiceDescriptor> ParentDescriptors { get; }
-        IChildServiceCollection RemoveParentDescriptors(Func<ServiceDescriptor, bool> parentFilterPredicate);
+        void ConfigureParentServices(Action<IServiceCollection> configureServices);
+        void ConfigureChildServices(Action<IServiceCollection> configureServices);
 
-        IChildServiceCollection RemoveParentDescriptors(Type serviceType);
+        IEnumerable<ServiceDescriptor> GetParentServiceDescriptors();
+
+        IEnumerable<ServiceDescriptor> GetChildServiceDescriptors();
 
         /// <summary>
-        /// Calls to <see cref="Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAdd"/> within the <paramref name="configureServices"/> will not be prevented from succeeding if descriptors for the same service exist in parent services.
-        /// - Resulting in potentially duplicate registrations being added to child service descriptors. In addition, any such
-        /// duplicate service registrations will be detected, and then removed from Parent level service descriptors - effectively promoting the service descriptor to a "child only" registration.
+        /// Any singleton services registered within the callback, will be inspected and if the same service is already registered at parent level, it will be duplicated at child level - resulting in the child getting its own singleton.
+        /// The normal behaviour (when not within this callback) would be that TryAdd() for a singleton service that is already registered (i.e at parent level) would not register the same service again and the singleton would therefore remain a true singleton.
         /// </summary>
-        /// <param name="predicate"></param>
         /// <param name="configureServices"></param>
         /// <returns></returns>
-        IChildServiceCollection AutoPromoteChildDuplicates(Func<ServiceDescriptor, bool> predicate,
-                       Action<IChildServiceCollection> configureServices, Func<ServiceDescriptor, bool> promotePredicate = null);
+        IChildServiceCollection AutoDuplicateSingletons(Action<IChildServiceCollection> configureServices);
 
         /// <summary>
         /// Configure the current collection, allows for chaining.
         /// </summary>
         /// <returns></returns>
         IChildServiceCollection ConfigureServices(Action<IServiceCollection> configureServices);
-
     }
 }

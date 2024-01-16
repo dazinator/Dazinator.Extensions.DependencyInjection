@@ -106,21 +106,9 @@ Or you can attempt to manipulate the IServiceCollection's before the containers 
 This was a design decision - it's better to potentially include "too many" services and allow you to filter them yourself, that in is to autoamtically assume child registrations are not "additive" to parent ones, and perform auto substitution / replacement.
 
 
-# Singleton Open Generic Registrations
+# Singleton Registrations
 
-When singleton open generic types are registered in the parent container (and Microsoft.Extensions.Hosting adds a bunch by default), and not also registered again in the child container:
-
-```
-services.AddSingleton(typeof(IOptions<>), typeof(OptionsManager<T>));
-
-```
-
-The default behaviour is that the Child Service Provider will intercept requests for such types and will delegate / forward the resolution of such requests to the parent container.
-
-This gives the desired behaviour that only a single instance for the singleton open generic type registration, is created.
-If you also register the same singleton open generic type again when configuring a child container - that will override the parent registration, and so a seperate singleton instance will be created at child container level.
-
-This feature does add a small amount of overhead, as requests for certain services must be re-routed from child to the parent at runtime, and this can involve some extra cache lookups and introspection of types, or extra work on a cache miss etc.
+The default behaviour is that singletons registered at the parent level are true singletons, and are **not** created again when resolved from the child containe - the child container delegates to the parent container to resolve the singleton.
 
 ```csharp
   // Singleton open generic registered only in parent container
@@ -136,4 +124,68 @@ This feature does add a small amount of overhead, as requests for certain servic
 
 ```
 
-Its possible the performance of this feature could be improved but it would rquire changes to MS DI discussed here: https://github.com/dotnet/runtime/issues/41050#issuecomment-698642970
+This gives the default behaviour that only a single instance is ever created.
+
+When registering services at the child level, if the service has already been registered at parent level, api's that use `services.TryAdd<TService>` will fail to add another registration at child level, as it sees that the service is already registered - it can't tell that the registration is at parent level.
+Many api's provided by microsoft - like `services.AddLogging()` for example, use `TryAdd()` and so if an `ILoggerFactory` is already registered at parent level and you use `AddLogging()` again at child level - it won't register a seperate `ILoggerFactory` instance and instead the one at parent level will end up being used.
+
+To bypass this you can use `AutoDuplicateSingletons` api, which will hide the parent level singleton registrations allowing duplicate singleton registrations at the child level.
+
+```csharp
+        [Fact]
+        public void AutoPromote_AllowsDuplicatedDescriptorsToBe_PromotedToChildLevel()
+        {
+
+            // In this scenario, a service is registered in the parent,
+            // and we pretend we have an external AddXyz() method we want to call on the child IServiceCollection,
+            // and that AddXyz() has some logic that will TryAdd() to add the same service descriptor.
+            // because the service descriptor has already been added at parent level this would shouldy result in a duplicate NOT
+            // being added as the TryAdd() will fail at child level as the child sees ALL of the parent registrations.
+            // Therefore we allow the user to filter the parent registrations from view, so that AddXyz doesn't see any registrations
+            // at parent level, and therefore adds all of its services again at parent level.
+
+            var parentServiceCollection = new ServiceCollection();
+            parentServiceCollection.AddSingleton<LionService>();
+            parentServiceCollection.AddTransient<AnimalService>();
+
+            Assert.Equal(2, parentServiceCollection.Count);
+
+
+            IChildServiceCollection sut = new ChildServiceCollection(parentServiceCollection.Clone());
+            Assert.Equal(2, sut.Count);
+            Assert.Equal(2, sut.GetParentServiceDescriptors().Count());
+            Assert.Empty(sut.GetChildServiceDescriptors());
+
+            // demonstrates the issue - this will not add any service because the service descriptor already visible at parent level,
+            sut.TryAddSingleton<LionService>();
+            Assert.Equal(2, sut.Count);
+            Assert.Equal(2, sut.GetParentServiceDescriptors().Count());
+            Assert.Empty(sut.GetChildServiceDescriptors());
+
+            // Within the action below, we are hiding parent level service descriptors that match the predicate,
+            // vausing them to be added again by TryAdd()
+            sut = sut.AutoDuplicateSingletons((nested) =>
+             {
+                 // Singleton LionService should be hidden, so TryAdd() calls should succeed
+                 Assert.Single(nested);
+                 Assert.Single(nested.GetParentServiceDescriptors());
+                 Assert.Empty(nested.GetChildServiceDescriptors());
+
+                 nested.TryAddSingleton<LionService>();
+                 Assert.Equal(2, nested.Count);
+                 Assert.Single(nested.GetParentServiceDescriptors());
+                 Assert.Single(nested.GetChildServiceDescriptors());
+             });
+
+            // The duplicated service descriptor should no longer be in the parent services, only in child services - it has been promoted.
+            Assert.Equal(2, sut.Count);
+            Assert.Single(sut.GetParentServiceDescriptors());
+            Assert.Single(sut.GetChildServiceDescriptors());
+        }
+```
+
+This will result in the child having a seperate singleton instance to the parent.
+
+### Notes
+
+A conversation about changes to MS DI discussed here: https://github.com/dotnet/runtime/issues/41050#issuecomment-698642970

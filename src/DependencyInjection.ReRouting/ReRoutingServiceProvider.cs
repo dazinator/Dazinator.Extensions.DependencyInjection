@@ -5,12 +5,12 @@ namespace Dazinator.Extensions.DependencyInjection
     using System.Collections.Immutable;
     using System.Linq;
     using System.Runtime.CompilerServices;
-    using System.Threading.Tasks;
+    using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
-    /// Requests for specific service types can be re-routed to an alternative service provider. 
+    /// Requests for specific service types can be re-routed to an alternative service provider.
     /// </summary>
-    public class ReRoutingServiceProvider : IServiceProvider
+    public class ReRoutingServiceProvider : IServiceProvider, IServiceScopeFactory
     {
         private readonly IServiceProvider _defaultServiceProvider;
 
@@ -21,6 +21,7 @@ namespace Dazinator.Extensions.DependencyInjection
         private ImmutableDictionary<Type, IServiceProvider> _openGenericTypeMappingCache = ImmutableDictionary<Type, IServiceProvider>.Empty;
 
         private bool _hasOpenGenericTypes = false;
+
 
         public ReRoutingServiceProvider(IServiceProvider defaultServiceProvider)
         {
@@ -42,14 +43,41 @@ namespace Dazinator.Extensions.DependencyInjection
                     // so that when a closed type is requested we can map it back to the open type to be requested.
                     _openGenericServiceTypes.Add(serviceType);
                 }
+
                 _hasOpenGenericTypes = _openGenericServiceTypes.Any();
             }
+
             return this;
+        }
+
+        private ReRoutingServiceProvider(
+            IServiceProvider defaultServiceProvider,
+            Dictionary<Type, IServiceProvider> routes,
+            HashSet<Type> openGenericServiceTypes,
+            ImmutableDictionary<Type, IServiceProvider> openGenericTypeMappingCache
+        )
+        {
+            _defaultServiceProvider = defaultServiceProvider ?? throw new ArgumentNullException(nameof(defaultServiceProvider));
+            _routes = routes ?? throw new ArgumentNullException(nameof(routes));
+            _openGenericServiceTypes = openGenericServiceTypes ?? throw new ArgumentNullException(nameof(openGenericServiceTypes));
+            _openGenericTypeMappingCache = openGenericTypeMappingCache ?? throw new ArgumentNullException(nameof(openGenericTypeMappingCache));
+        }
+
+
+        public IServiceScope CreateScope()
+        {
+            var innerScope = _defaultServiceProvider.CreateScope();
+            var reRoutingProvider = new ReRoutingServiceProvider(innerScope.ServiceProvider, _routes, _openGenericServiceTypes, _openGenericTypeMappingCache);
+            return new ServiceScopeDecorator(innerScope, reRoutingProvider);
         }
 
         public object GetService(Type serviceType)
         {
-            // We need to ascertain if this type is an instance of an open generic service.
+
+            if (serviceType == typeof(IServiceScopeFactory))
+            {
+                return this;
+            }
 
             // TODO: what about if the same service type is registered multiple times,
             // in that case, do we need to think about automatically supporting the resolution of IEnumerable<TServiceType> as well?
@@ -67,8 +95,7 @@ namespace Dazinator.Extensions.DependencyInjection
             //         a) generic types we've already checked and found don't need to be forwarded to an open type registration route - so we can skip this check in future.
             //         b) generic types we've already checked, and found do need to be forwarded to an open generic type registrations - so we can short cut to the previously ascertained answer.
             //          *)  Don't lock for cache updates - prefer a cache miss, cache should slowly grow to prevent cache misses in future concurrent cases.
-            //   
-
+            //
 
             // A
             // i and ii)
@@ -117,5 +144,4 @@ namespace Dazinator.Extensions.DependencyInjection
             }
         }
     }
-
 }

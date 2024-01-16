@@ -32,7 +32,7 @@ namespace Dazinator.Extensions.DependencyInjection.Tests.ChildServiceProvider
                  });
              },
              s => s.BuildServiceProvider(),
-             ParentSingletonOpenGenericRegistrationsBehaviour.DuplicateSingletons);
+             ParentSingletonBehaviour.DuplicateSingletons);
 
 
             var options = childServiceProvider.GetRequiredService<IOptions<TestOptions>>();

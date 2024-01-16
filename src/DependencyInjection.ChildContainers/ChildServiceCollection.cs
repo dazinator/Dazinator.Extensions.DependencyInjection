@@ -6,7 +6,7 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
     using System.Collections.Immutable;
     using System.Linq;
     using Microsoft.Extensions.DependencyInjection;
-
+    using Microsoft.Extensions.DependencyInjection.Extensions;
 
 
     /// <summary>
@@ -14,12 +14,20 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
     /// </summary>
     public class ChildServiceCollection : IChildServiceCollection
     {
+        private readonly bool _allowModifyingParentLevelServices;
+        private readonly IServiceCollection _descriptors;
+        private IServiceCollection _parentDescriptors;
 
-        private readonly List<ServiceDescriptor> _descriptors = new List<ServiceDescriptor>();
+        public ChildServiceCollection(IServiceCollection parentServices) : this(parentServices, null, false)
+        {
+        }
 
-        public ChildServiceCollection(IReadOnlyList<ServiceDescriptor> parent) => Parent = parent;
-
-        public ChildServiceCollection(IReadOnlyList<ServiceDescriptor> parent, IEnumerable<ServiceDescriptor> childDescriptors) : this(parent) => _descriptors.AddRange(childDescriptors);
+        public ChildServiceCollection(IServiceCollection parentServices, IServiceCollection childDescriptors = null, bool allowModifyingParentLevelServices = true)
+        {
+            _allowModifyingParentLevelServices = allowModifyingParentLevelServices;
+            _parentDescriptors = parentServices;
+            _descriptors = childDescriptors ?? new ServiceCollection();
+        }
 
         /// <inheritdoc />
         public int Count => _descriptors.Count + Parent.Count;
@@ -27,7 +35,31 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
         /// <inheritdoc />
         public bool IsReadOnly => false;
 
-        public IReadOnlyList<ServiceDescriptor> Parent { get; private set; }
+        public void ConfigureParentServices(Action<IServiceCollection> configureServices)
+        {
+            configureServices?.Invoke(Parent);
+        }
+
+        public void ConfigureChildServices(Action<IServiceCollection> configureServices)
+        {
+            configureServices?.Invoke(ChildServices);
+        }
+
+        public IEnumerable<ServiceDescriptor> GetParentServiceDescriptors()
+        {
+            return Parent.AsEnumerable();
+        }
+
+        public IEnumerable<ServiceDescriptor> GetChildServiceDescriptors()
+        {
+            return ChildServices.AsEnumerable();
+        }
+
+        public IServiceCollection Parent
+        {
+            get => _parentDescriptors;
+            private set => _parentDescriptors = value;
+        }
 
         /// <inheritdoc />
         public ServiceDescriptor this[int index]
@@ -51,9 +83,18 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
                 // can't update indexes that belong to parent.
                 if (index < parentCount)
                 {
-                    /// throwing `ArgumentOutOfRangeException` instead of `IndexOutOfRangeException` to make consistent with IList.
-                    throw new ArgumentOutOfRangeException("The index belongs to the parent collection which is readonly.");
+                    if (!_allowModifyingParentLevelServices)
+                    {
+                        /// throwing `ArgumentOutOfRangeException` instead of `IndexOutOfRangeException` to make consistent with IList.
+                        throw new ArgumentOutOfRangeException("The index belongs to the parent collection which is readonly.");
+                    }
+
+                    Parent[index] = value;
+                    // Parent.SetItem(index, value);
+                    return;
+                    // Parent = Parent.Select((a, i) => i == index ? value : a).ToImmutableList();
                 }
+
                 var newIndex = index - parentCount;
                 _descriptors[newIndex] = value;
             }
@@ -115,6 +156,7 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
             {
                 index = _descriptors.IndexOf(item) + Parent.Count; // offset from parent which is readonly.
             }
+
             return index;
         }
 
@@ -129,9 +171,16 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
             // can't update indexes that belong to parent.
             if (index < parentCount)
             {
-                /// throwing `ArgumentOutOfRangeException` instead of `IndexOutOfRangeException` to make consistent with IList.
-                throw new ArgumentOutOfRangeException("The index belongs to the parent collection which is readonly.");
+                if (!_allowModifyingParentLevelServices)
+                {
+                    /// throwing `ArgumentOutOfRangeException` instead of `IndexOutOfRangeException` to make consistent with IList.
+                    throw new ArgumentOutOfRangeException("The index belongs to the parent collection which is readonly.");
+                }
+
+                Parent.Insert(index, item);
+                return;
             }
+
             var newIndex = index - parentCount;
             _descriptors.Insert(newIndex, item);
         }
@@ -146,15 +195,21 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
             // can't update indexes that belong to parent.
             if (index < parentCount)
             {
-                /// throwing `ArgumentOutOfRangeException` instead of `IndexOutOfRangeException` to make consistent with IList.
-                throw new ArgumentOutOfRangeException("The index belongs to the parent collection which is readonly.");
+                if (!_allowModifyingParentLevelServices)
+                {
+                    /// throwing `ArgumentOutOfRangeException` instead of `IndexOutOfRangeException` to make consistent with IList.
+                    throw new ArgumentOutOfRangeException("The index belongs to the parent collection which is readonly.");
+                }
+
+                Parent.RemoveAt(index);
+                return;
             }
+
             var newIndex = index - parentCount;
             _descriptors.RemoveAt(newIndex);
         }
 
-        public IEnumerable<ServiceDescriptor> ChildDescriptors => _descriptors;
-        public IEnumerable<ServiceDescriptor> ParentDescriptors => Parent;
+        public IServiceCollection ChildServices => _descriptors;
 
         public IChildServiceCollection ConfigureServices(Action<IServiceCollection> configureServices)
         {
@@ -162,52 +217,42 @@ namespace Dazinator.Extensions.DependencyInjection.ChildContainers
             return this;
         }
 
-        #region Methods that modi parent services return a new collection
 
         /// <summary>
         /// Calls to <see cref="Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAdd"/> within the <paramref name="configureServices"/> will not be prevented from succeeding if descriptors for the same service exist in parent services matching the predicate.
-        /// If any such "duplicate" descriptors are added, they are then removed from the parent level service descriptors (so only will exist at child level) in the returned <see cref="IChildServiceCollection"/>.
+        /// If any such "duplicate" descriptors are added, they are then removed from the parent level service descriptors (so only will exist at child level)
         /// </summary>
         /// <param name="predicate"></param>
         /// <param name="configureServices"></param>
         /// <returns></returns>
-        public IChildServiceCollection AutoPromoteChildDuplicates(Func<ServiceDescriptor, bool> predicate,
-                       Action<IChildServiceCollection> configureServices, Func<ServiceDescriptor, bool> promotePredicate = null)
+        public IChildServiceCollection AutoDuplicateSingletons(
+            Action<IChildServiceCollection> configureServices
+        )
         {
+            var toExclude = this.Parent.Where(a => a.IsSingleton()).ToArray(); // allows TryAdd() to succeed where it wouldn't have previously.
+            var filteredParent = this.Parent.Except(toExclude).ToImmutableList(); // hide singletons.
+            var concatParent = filteredParent.Concat(ChildServices).ToImmutableList();
 
-            var toExclude = this.Parent.Where(predicate).ToArray(); // allows TryAdd() to succeed where it wouldn't have previously.
-            var filteredParent = this.Parent.Except(toExclude).ToImmutableList();
-            var concatParent = filteredParent.Concat(ChildDescriptors).ToImmutableList();
+            // let caller register services with all singletons removed. TryAdd for singletons will now succeed by adding a duplicate registration.
+            var parentServices = new ServiceCollection();
+            parentServices.AddRange(concatParent);
 
-            var newlyAddedColl = new ChildServiceCollection(concatParent);
+            var newlyAddedColl = new ChildServiceCollection(parentServices);
             configureServices(newlyAddedColl);
-            var added = newlyAddedColl.ChildDescriptors;
 
-            var newChildDescripors = _descriptors.Concat(added);
+            // These are the registrations that have been added to the child.
+            var added = newlyAddedColl.ChildServices;
 
-            // Remove the services from the parent that have been promoted to the child.
+            // collect all the new registrations at child level - there can now be duplicates at parent and child level.
+            _descriptors.Clear();
+            _descriptors.AddRange(added);
+
+            // Identify the duplicates and remove them them from the parent level - they have been promoted to child level singletons.
             var promoted = toExclude.Join(added, (i) => i.ServiceType, o => o.ServiceType, (a, b) => a)
-                                    .Where(a => promotePredicate == null ? true : promotePredicate(a)).ToArray();
+                .ToArray();
 
-            var newParent = this.Parent.Except(promoted).ToImmutableList();
-            return new ChildServiceCollection(newParent, newChildDescripors);
+            Parent.RemoveRange(promoted);
+            return this;
         }
-
-        /// <summary>
-        /// Removes parent level <see cref="ServiceDescriptor"/> that match the predicate,
-        /// </summary>
-        /// <remarks>When building child containers backed by <see cref="ServiceProvider"/></remarks> this is often a necessary step for any parent level "singleton open generic" registrations
-        /// because they can't currently be resolved from a child container to an existing parent instance, 
-        /// and so have to be registered as seperate instances in the child, or omitted / removed.
-        public IChildServiceCollection RemoveParentDescriptors(Func<ServiceDescriptor, bool> parentFilterPredicate)
-        {
-            var toRemove = this.Parent.Where(parentFilterPredicate);
-            var newParent = this.Parent.Except(toRemove).ToImmutableList();
-            return new ChildServiceCollection(newParent, _descriptors);
-        }
-
-        public IChildServiceCollection RemoveParentDescriptors(Type serviceType) => RemoveParentDescriptors(a => a.ServiceType == serviceType);
-
-        #endregion
     }
 }
